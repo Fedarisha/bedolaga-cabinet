@@ -6,6 +6,8 @@ import {
   useRef,
   useEffect,
   ReactNode,
+  PointerEvent,
+  TouchEvent,
 } from 'react';
 
 interface ToastOptions {
@@ -106,9 +108,89 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startXRef = useRef(0);
+  const dragXRef = useRef(0);
+  const pointerIdRef = useRef<number | null>(null);
+  const swipeHandledRef = useRef(false);
+
+  const setDrag = (value: number) => {
+    const clamped = Math.max(-160, Math.min(160, value));
+    dragXRef.current = clamped;
+    setDragX(clamped);
+  };
+
   const handleClick = () => {
+    if (swipeHandledRef.current) {
+      swipeHandledRef.current = false;
+      return;
+    }
     toast.onClick?.();
     onClose();
+  };
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'touch') return;
+    startXRef.current = event.clientX;
+    dragXRef.current = 0;
+    pointerIdRef.current = event.pointerId;
+    setIsDragging(true);
+    setDragX(0);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || pointerIdRef.current !== event.pointerId) return;
+    setDrag(event.clientX - startXRef.current);
+  };
+
+  const handlePointerEnd = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || pointerIdRef.current !== event.pointerId) return;
+    const shouldDismiss = Math.abs(dragXRef.current) > 72;
+    setIsDragging(false);
+    pointerIdRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (shouldDismiss) {
+      swipeHandledRef.current = true;
+      onClose();
+      return;
+    }
+
+    setDrag(0);
+  };
+
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    startXRef.current = touch.clientX;
+    dragXRef.current = 0;
+    setIsDragging(true);
+    setDragX(0);
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    setDrag(touch.clientX - startXRef.current);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    const shouldDismiss = Math.abs(dragXRef.current) > 72;
+    setIsDragging(false);
+
+    if (shouldDismiss) {
+      swipeHandledRef.current = true;
+      onClose();
+      return;
+    }
+
+    setDrag(0);
   };
 
   const typeStyles = {
@@ -199,8 +281,43 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     <div
       className={`pointer-events-auto w-full cursor-pointer border border-l-4 border-dark-700 ${style.border} animate-slide-in-right overflow-hidden rounded-2xl bg-dark-900 shadow-2xl shadow-black/50 backdrop-blur-xl transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:max-w-sm`}
       onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      style={{
+        transform: dragX ? `translateX(${dragX}px)` : undefined,
+        opacity: dragX ? Math.max(0.55, 1 - Math.abs(dragX) / 220) : undefined,
+        transition: isDragging ? 'none' : undefined,
+        touchAction: 'pan-y',
+      }}
     >
       <div className="relative p-4">
+        <button
+          type="button"
+          aria-label="Close notification"
+          onClick={(event) => {
+            event.stopPropagation();
+            onClose();
+          }}
+          className="absolute right-2 top-2 hidden rounded-lg p-1.5 text-dark-500 transition-colors hover:bg-dark-800 hover:text-dark-200 sm:block"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         <div className="flex gap-3">
           {/* Icon */}
           <div

@@ -60,6 +60,23 @@ const HelpIcon = () => (
   </svg>
 );
 
+const LinkAccountsIcon = () => (
+  <svg
+    width="28"
+    height="28"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+  </svg>
+);
+
 const PeopleIcon = () => (
   <svg
     width="28"
@@ -90,6 +107,13 @@ export default function StatsGrid({ balanceRubles }: StatsGridProps) {
       icon: WalletIcon,
       tone: 'bg-accent-500/15 text-accent-300',
       onboarding: 'balance',
+    },
+    {
+      title: t('dashboard.simple.accountsTitle'),
+      description: t('dashboard.simple.accountsHint'),
+      to: '/profile/accounts',
+      icon: LinkAccountsIcon,
+      tone: 'bg-blue-500/15 text-blue-300',
     },
     {
       title: t('dashboard.simple.supportTitle'),

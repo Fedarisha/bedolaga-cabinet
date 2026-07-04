@@ -7,6 +7,11 @@ import { useShallow } from 'zustand/shallow';
 import { consumeCampaignSlug, getPendingCampaignSlug } from '../utils/campaign';
 import { tokenStorage } from '../utils/token';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import {
+  LEGACY_AUTH_RECOVERY_RETURN_URL,
+  consumeLegacyAuthRecovery,
+} from '../utils/legacyAuthRecovery';
+import { requestAccountLinkingSuggestion } from '../utils/accountLinkingSuggestion';
 
 export default function VerifyEmail() {
   const { t } = useTranslation();
@@ -51,8 +56,12 @@ export default function VerifyEmail() {
         }
         checkAdminStatus();
         setStatus('success');
-        // Redirect to dashboard after short delay
-        redirectTimer = setTimeout(() => navigate('/', { replace: true }), 1500);
+        const shouldOpenAccounts = consumeLegacyAuthRecovery();
+        if (!shouldOpenAccounts) {
+          requestAccountLinkingSuggestion();
+        }
+        const returnUrl = shouldOpenAccounts ? LEGACY_AUTH_RECOVERY_RETURN_URL : '/';
+        redirectTimer = setTimeout(() => navigate(returnUrl, { replace: true }), 1500);
       } catch (err: unknown) {
         setStatus('error');
         const error = err as { response?: { data?: { detail?: string } } };

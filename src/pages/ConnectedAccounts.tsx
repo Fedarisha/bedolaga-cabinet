@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authApi } from '../api/auth';
@@ -304,6 +304,7 @@ export default function ConnectedAccounts() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [confirmingUnlink, setConfirmingUnlink] = useState<string | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
@@ -329,6 +330,7 @@ export default function ConnectedAccounts() {
 
   const inTelegram = useIsTelegram();
   const platform = usePlatform();
+  const isLegacyRecovery = searchParams.get('legacyRecovery') === '1';
 
   useEffect(() => {
     return () => {
@@ -601,6 +603,24 @@ export default function ConnectedAccounts() {
         </h1>
         <p className="mt-1 text-dark-400">{t('profile.accounts.subtitle')}</p>
       </motion.div>
+
+      {isLegacyRecovery && (
+        <motion.div variants={staggerItem}>
+          <Card className="border-warning-500/30 bg-warning-500/10">
+            <div className="space-y-2">
+              <p className="font-medium text-dark-100">
+                {t('profile.accounts.legacyRecoveryTitle', 'Привяжите старый аккаунт')}
+              </p>
+              <p className="text-sm leading-relaxed text-dark-300">
+                {t(
+                  'profile.accounts.legacyRecoveryDescription',
+                  'Чтобы сохранить подписки, баланс и историю, найдите ниже старый способ входа и нажмите «Привязать». Если система найдёт прежний аккаунт, она предложит объединить аккаунты.',
+                )}
+              </p>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Loading state */}
       {isLoading && (

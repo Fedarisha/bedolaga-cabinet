@@ -10,6 +10,11 @@ import {
   clearOAuthState,
   getErrorDetail,
 } from '../utils/oauth';
+import {
+  LEGACY_AUTH_RECOVERY_RETURN_URL,
+  consumeLegacyAuthRecovery,
+} from '../utils/legacyAuthRecovery';
+import { requestAccountLinkingSuggestion } from '../utils/accountLinkingSuggestion';
 import type { ServerCompleteResponse } from '../types';
 
 type CallbackMode = 'login' | 'link-browser' | 'link-server';
@@ -105,7 +110,11 @@ export default function OAuthCallback() {
         }
         try {
           await loginWithOAuth(provider, code, state, deviceId);
-          navigate('/', { replace: true });
+          const shouldOpenAccounts = consumeLegacyAuthRecovery();
+          if (!shouldOpenAccounts) {
+            requestAccountLinkingSuggestion();
+          }
+          navigate(shouldOpenAccounts ? LEGACY_AUTH_RECOVERY_RETURN_URL : '/', { replace: true });
         } catch (err: unknown) {
           const detail = getErrorDetail(err);
           setError(detail || t('auth.oauthError', 'Authorization was denied or failed'));

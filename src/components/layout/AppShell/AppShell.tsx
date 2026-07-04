@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import WebSocketNotifications from '@/components/WebSocketNotifications';
 import CampaignBonusNotifier from '@/components/CampaignBonusNotifier';
 import SuccessNotificationModal from '@/components/SuccessNotificationModal';
+import AccountLinkingSuggestionNotifier from '@/components/AccountLinkingSuggestionNotifier';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
 import { SubscriptionIcon, GiftIcon } from '@/components/icons';
@@ -286,6 +287,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* Global components */}
       <WebSocketNotifications />
       <CampaignBonusNotifier />
+      <AccountLinkingSuggestionNotifier />
       <SuccessNotificationModal />
 
       {/* Desktop Header */}
