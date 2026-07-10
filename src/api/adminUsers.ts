@@ -375,6 +375,59 @@ export interface UpdateRestrictionsResponse {
   message: string;
 }
 
+export interface UpdateUserEmailRequest {
+  email: string | null;
+  email_verified: boolean;
+}
+
+export interface UpdateUserEmailResponse {
+  success: boolean;
+  old_email: string | null;
+  new_email: string | null;
+  email_verified: boolean;
+  message: string;
+}
+
+export interface AdminAccountMergePreviewSubscription {
+  status: string;
+  is_trial: boolean;
+  end_date: string | null;
+  traffic_limit_gb: number;
+  traffic_used_gb: number;
+  device_limit: number;
+  tariff_name: string | null;
+  autopay_enabled: boolean;
+}
+
+export interface AdminAccountMergePreviewUser {
+  id: number;
+  username: string | null;
+  first_name: string | null;
+  email: string | null;
+  auth_methods: string[];
+  balance_kopeks: number;
+  subscription: AdminAccountMergePreviewSubscription | null;
+  subscriptions_count: number;
+  created_at: string | null;
+}
+
+export interface AdminAccountMergePreviewResponse {
+  primary: AdminAccountMergePreviewUser;
+  secondary: AdminAccountMergePreviewUser;
+}
+
+export interface AdminAccountMergeRequest {
+  secondary_user_id: number;
+  keep_subscription_from: 'primary' | 'secondary';
+}
+
+export interface AdminAccountMergeResponse {
+  success: boolean;
+  primary_user_id: number;
+  secondary_user_id: number;
+  message: string;
+}
+
 export interface SyncFromPanelRequest {
   update_subscription?: boolean;
   update_traffic?: boolean;
@@ -527,6 +580,35 @@ export const adminUsersApi = {
     data: UpdateRestrictionsRequest,
   ): Promise<UpdateRestrictionsResponse> => {
     const response = await apiClient.post(`/cabinet/admin/users/${userId}/restrictions`, data);
+    return response.data;
+  },
+
+  // Update email
+  updateEmail: async (
+    userId: number,
+    data: UpdateUserEmailRequest,
+  ): Promise<UpdateUserEmailResponse> => {
+    const response = await apiClient.post(`/cabinet/admin/users/${userId}/email`, data);
+    return response.data;
+  },
+
+  // Preview account merge
+  getMergePreview: async (
+    userId: number,
+    secondaryUserId: number,
+  ): Promise<AdminAccountMergePreviewResponse> => {
+    const response = await apiClient.post(`/cabinet/admin/users/${userId}/merge/preview`, {
+      secondary_user_id: secondaryUserId,
+    });
+    return response.data;
+  },
+
+  // Merge another user into this user
+  mergeAccounts: async (
+    userId: number,
+    data: AdminAccountMergeRequest,
+  ): Promise<AdminAccountMergeResponse> => {
+    const response = await apiClient.post(`/cabinet/admin/users/${userId}/merge`, data);
     return response.data;
   },
 

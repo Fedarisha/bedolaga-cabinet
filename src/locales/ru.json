@@ -3655,6 +3655,16 @@
         "noRequests": "Нет запросов",
         "totalSpent": "Всего потрачено",
         "purchases": "Покупок",
+        "email": {
+          "placeholder": "user@example.com",
+          "markVerified": "Считать email подтверждённым",
+          "verified": "Подтверждён",
+          "unverified": "Не подтверждён",
+          "clear": "Очистить",
+          "required": "Введите email",
+          "updated": "Email обновлён",
+          "updateError": "Не удалось обновить email"
+        },
         "campaign": "Рекламная кампания",
         "referralsList": "Список рефералов",
         "noReferrals": "Нет рефералов",
@@ -3715,6 +3725,21 @@
         "actions": {
           "title": "Действия",
           "areYouSure": "Уверены?"
+        },
+        "accountMerge": {
+          "title": "Привязка аккаунтов",
+          "hint": "Текущий пользователь останется основным, выбранный аккаунт будет поглощён.",
+          "open": "Привязать",
+          "searchPlaceholder": "Найдите аккаунт по ID, имени, email или Telegram...",
+          "primary": "Основной аккаунт",
+          "secondary": "Привязываемый аккаунт",
+          "subscription": "подписка",
+          "keepSubscription": "Какую подписку оставить",
+          "primarySubscription": "Основного аккаунта",
+          "secondarySubscription": "Привязываемого аккаунта",
+          "submit": "Привязать аккаунты",
+          "success": "Аккаунты привязаны",
+          "error": "Не удалось привязать аккаунты"
         },
         "subscription": {
           "current": "Текущая подписка",

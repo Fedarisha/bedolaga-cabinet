@@ -16,6 +16,7 @@ import {
   type UpdateSubscriptionRequest,
   type AdminUserGiftsResponse,
   type SubscriptionRequestRecord,
+  type AdminAccountMergePreviewResponse,
 } from '../api/adminUsers';
 import { adminApi, type AdminTicket, type AdminTicketDetail } from '../api/admin';
 import { promocodesApi, type PromoGroup } from '../api/promocodes';
@@ -288,6 +289,18 @@ export default function AdminUserDetail() {
   const [addReferralSearchLoading, setAddReferralSearchLoading] = useState(false);
   const addReferralSearchRef = useRef<HTMLDivElement>(null);
 
+  // Account merge
+  const [showAccountMerge, setShowAccountMerge] = useState(false);
+  const [mergeSearchQuery, setMergeSearchQuery] = useState('');
+  const [mergeSearchResults, setMergeSearchResults] = useState<UserListItem[]>([]);
+  const [mergeSearchLoading, setMergeSearchLoading] = useState(false);
+  const [mergeTarget, setMergeTarget] = useState<UserListItem | null>(null);
+  const [mergePreview, setMergePreview] = useState<AdminAccountMergePreviewResponse | null>(null);
+  const [mergeKeepSubscriptionFrom, setMergeKeepSubscriptionFrom] = useState<
+    'primary' | 'secondary'
+  >('primary');
+  const mergeSearchRef = useRef<HTMLDivElement>(null);
+
   // Panel info & node usage
   const [panelInfo, setPanelInfo] = useState<UserPanelInfo | null>(null);
   const [panelInfoLoading, setPanelInfoLoading] = useState(false);
@@ -324,6 +337,11 @@ export default function AdminUserDetail() {
   // Promo group
   const [promoGroups, setPromoGroups] = useState<PromoGroup[]>([]);
   const [editingPromoGroup, setEditingPromoGroup] = useState(false);
+
+  // Email
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [emailVerifiedInput, setEmailVerifiedInput] = useState(false);
 
   // Referral commission
   const [editingReferralCommission, setEditingReferralCommission] = useState(false);
@@ -919,6 +937,39 @@ export default function AdminUserDetail() {
     [],
   );
 
+  const startEmailEdit = () => {
+    setEmailInput(user?.email || '');
+    setEmailVerifiedInput(Boolean(user?.email_verified));
+    setEditingEmail(true);
+  };
+
+  const handleUpdateEmail = async (clear = false) => {
+    if (!userId) return;
+    const email = clear ? null : emailInput.trim().toLowerCase();
+    if (!clear && !email) {
+      notify.error(t('admin.users.detail.email.required'), t('common.error'));
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateEmail(userId, {
+        email,
+        email_verified: clear ? false : emailVerifiedInput,
+      });
+      notify.success(t('admin.users.detail.email.updated'), t('common.success'));
+      setEditingEmail(false);
+      await loadUser();
+    } catch (error: unknown) {
+      const axiosErr = error as { response?: { data?: { detail?: string } } };
+      notify.error(
+        axiosErr?.response?.data?.detail || t('admin.users.detail.email.updateError'),
+        t('common.error'),
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleChangePromoGroup = async (groupId: number | null) => {
     if (!userId) return;
     setActionLoading(true);
@@ -1061,6 +1112,51 @@ export default function AdminUserDetail() {
     }
   };
 
+  const handleSelectMergeTarget = async (target: UserListItem) => {
+    if (!userId) return;
+    setMergeTarget(target);
+    setMergeSearchQuery('');
+    setMergeSearchResults([]);
+    setMergePreview(null);
+    setActionLoading(true);
+    try {
+      const preview = await adminUsersApi.getMergePreview(userId, target.id);
+      setMergePreview(preview);
+      setMergeKeepSubscriptionFrom(
+        preview.secondary.subscription && !preview.primary.subscription ? 'secondary' : 'primary',
+      );
+    } catch (error: unknown) {
+      const axiosErr = error as { response?: { data?: { detail?: string } } };
+      notify.error(axiosErr?.response?.data?.detail || t('admin.users.detail.accountMerge.error'));
+      setMergeTarget(null);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMergeAccounts = async () => {
+    if (!userId || !mergeTarget) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.mergeAccounts(userId, {
+        secondary_user_id: mergeTarget.id,
+        keep_subscription_from: mergeKeepSubscriptionFrom,
+      });
+      notify.success(t('admin.users.detail.accountMerge.success'), t('common.success'));
+      setShowAccountMerge(false);
+      setMergeTarget(null);
+      setMergePreview(null);
+      setMergeSearchQuery('');
+      setMergeSearchResults([]);
+      await loadUser();
+    } catch (error: unknown) {
+      const axiosErr = error as { response?: { data?: { detail?: string } } };
+      notify.error(axiosErr?.response?.data?.detail || t('admin.users.detail.accountMerge.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Referrals tab: debounced user search for referrer assignment
   useEffect(() => {
     if (referrerSearchQuery.length < 2 || !showReferrerSearch) {
@@ -1153,6 +1249,49 @@ export default function AdminUserDetail() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showAddReferral]);
+
+  // Account merge: debounced user search for secondary account selection
+  useEffect(() => {
+    if (mergeSearchQuery.length < 2 || !showAccountMerge) {
+      setMergeSearchResults([]);
+      setMergeSearchLoading(false);
+      return;
+    }
+    setMergeSearchLoading(true);
+    setMergeSearchResults([]);
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const data = await adminUsersApi.getUsers({ search: mergeSearchQuery, limit: 10 });
+        if (!cancelled) {
+          setMergeSearchResults((data.users || []).filter((u) => u.id !== userId));
+          setMergeSearchLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setMergeSearchResults([]);
+          setMergeSearchLoading(false);
+        }
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [mergeSearchQuery, showAccountMerge, userId]);
+
+  // Account merge: close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mergeSearchRef.current && !mergeSearchRef.current.contains(e.target as Node)) {
+        setMergeSearchResults([]);
+      }
+    };
+    if (showAccountMerge) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showAccountMerge]);
 
   const handleResetTrial = async () => {
     if (!userId) return;
@@ -1401,8 +1540,70 @@ export default function AdminUserDetail() {
             {/* Details grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-dark-800/50 p-3">
-                <div className="mb-1 text-xs text-dark-500">Email</div>
-                <div className="text-dark-100">{user.email || '-'}</div>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-xs text-dark-500">Email</span>
+                  {hasPermission('users:edit') && (
+                    <button
+                      onClick={() => (editingEmail ? setEditingEmail(false) : startEmailEdit())}
+                      className="text-xs text-accent-400 transition-colors hover:text-accent-300"
+                    >
+                      {editingEmail ? t('common.cancel') : t('common.edit')}
+                    </button>
+                  )}
+                </div>
+                {editingEmail ? (
+                  <div className="space-y-2">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder={t('admin.users.detail.email.placeholder')}
+                      className="input w-full text-sm"
+                      disabled={actionLoading}
+                    />
+                    <label className="flex items-center gap-2 text-xs text-dark-300">
+                      <input
+                        type="checkbox"
+                        checked={emailVerifiedInput}
+                        onChange={(e) => setEmailVerifiedInput(e.target.checked)}
+                        className="h-4 w-4 rounded border-dark-600 bg-dark-700 text-accent-500"
+                        disabled={actionLoading || !emailInput.trim()}
+                      />
+                      {t('admin.users.detail.email.markVerified')}
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleUpdateEmail(false)}
+                        disabled={actionLoading}
+                        className="flex-1 rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-600 disabled:opacity-50"
+                      >
+                        {t('common.save')}
+                      </button>
+                      {user.email && (
+                        <button
+                          onClick={() => handleUpdateEmail(true)}
+                          disabled={actionLoading}
+                          className="rounded-lg bg-error-500/15 px-3 py-1.5 text-xs font-medium text-error-400 transition-colors hover:bg-error-500/25 disabled:opacity-50"
+                        >
+                          {t('admin.users.detail.email.clear')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="break-all text-dark-100">{user.email || '-'}</div>
+                    {user.email && (
+                      <div
+                        className={`mt-1 text-xs ${user.email_verified ? 'text-success-400' : 'text-warning-400'}`}
+                      >
+                        {user.email_verified
+                          ? t('admin.users.detail.email.verified')
+                          : t('admin.users.detail.email.unverified')}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="rounded-xl bg-dark-800/50 p-3">
                 <div className="mb-1 text-xs text-dark-500">{t('admin.users.detail.language')}</div>
@@ -1808,6 +2009,173 @@ export default function AdminUserDetail() {
                     : t('admin.users.userActions.delete')}
                 </button>
               </div>
+              {hasPermission('users:edit') && (
+                <div className="mt-4 border-t border-dark-700/60 pt-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-dark-200">
+                        {t('admin.users.detail.accountMerge.title')}
+                      </div>
+                      <div className="mt-0.5 text-xs text-dark-500">
+                        {t('admin.users.detail.accountMerge.hint')}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const next = !showAccountMerge;
+                        setShowAccountMerge(next);
+                        if (!next) {
+                          setMergeTarget(null);
+                          setMergePreview(null);
+                          setMergeSearchQuery('');
+                          setMergeSearchResults([]);
+                        }
+                      }}
+                      className="shrink-0 rounded-lg bg-dark-700 px-3 py-1.5 text-xs text-dark-300 transition-colors hover:bg-dark-600"
+                    >
+                      {showAccountMerge
+                        ? t('common.cancel')
+                        : t('admin.users.detail.accountMerge.open')}
+                    </button>
+                  </div>
+
+                  {showAccountMerge && (
+                    <div className="space-y-3">
+                      <div ref={mergeSearchRef} className="relative">
+                        <input
+                          value={mergeSearchQuery}
+                          onChange={(e) => {
+                            setMergeSearchQuery(e.target.value);
+                            setMergeTarget(null);
+                            setMergePreview(null);
+                          }}
+                          placeholder={t('admin.users.detail.accountMerge.searchPlaceholder')}
+                          className="input w-full text-sm"
+                          disabled={actionLoading}
+                        />
+                        {(mergeSearchLoading || mergeSearchResults.length > 0) && (
+                          <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-dark-600 bg-dark-800 shadow-xl">
+                            {mergeSearchLoading ? (
+                              <div className="p-3 text-sm text-dark-400">{t('common.loading')}</div>
+                            ) : (
+                              mergeSearchResults.map((candidate) => (
+                                <button
+                                  key={candidate.id}
+                                  onClick={() => handleSelectMergeTarget(candidate)}
+                                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-dark-700"
+                                  type="button"
+                                >
+                                  <div className="min-w-0">
+                                    <div className="truncate text-sm text-dark-100">
+                                      {candidate.full_name || `#${candidate.id}`}
+                                    </div>
+                                    <div className="truncate text-xs text-dark-500">
+                                      #{candidate.id}
+                                      {candidate.username ? ` · @${candidate.username}` : ''}
+                                      {candidate.telegram_id
+                                        ? ` · tg ${candidate.telegram_id}`
+                                        : ''}
+                                    </div>
+                                  </div>
+                                  <StatusBadge status={candidate.status} />
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {mergeTarget && mergePreview && (
+                        <div className="space-y-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                          <div className="grid gap-2 md:grid-cols-2">
+                            {(['primary', 'secondary'] as const).map((side) => {
+                              const previewUser = mergePreview[side];
+                              return (
+                                <div key={side} className="rounded-lg bg-dark-900/40 p-3">
+                                  <div className="mb-1 text-xs text-dark-500">
+                                    {side === 'primary'
+                                      ? t('admin.users.detail.accountMerge.primary')
+                                      : t('admin.users.detail.accountMerge.secondary')}
+                                  </div>
+                                  <div className="text-sm font-medium text-dark-100">
+                                    #{previewUser.id}{' '}
+                                    {previewUser.username
+                                      ? `@${previewUser.username}`
+                                      : previewUser.first_name || ''}
+                                  </div>
+                                  <div className="mt-1 text-xs text-dark-400">
+                                    {previewUser.email ||
+                                      previewUser.auth_methods.join(', ') ||
+                                      '-'}
+                                  </div>
+                                  <div className="mt-2 text-xs text-dark-300">
+                                    {formatWithCurrency(previewUser.balance_kopeks / 100)}
+                                    {previewUser.subscription ? (
+                                      <>
+                                        {' · '}
+                                        {previewUser.subscription.tariff_name ||
+                                          t('admin.users.detail.accountMerge.subscription')}
+                                      </>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {mergePreview.primary.subscription &&
+                            mergePreview.secondary.subscription && (
+                              <div>
+                                <div className="mb-2 text-xs text-dark-500">
+                                  {t('admin.users.detail.accountMerge.keepSubscription')}
+                                </div>
+                                <div className="grid gap-2 md:grid-cols-2">
+                                  {(['primary', 'secondary'] as const).map((side) => (
+                                    <button
+                                      key={side}
+                                      onClick={() => setMergeKeepSubscriptionFrom(side)}
+                                      type="button"
+                                      className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                                        mergeKeepSubscriptionFrom === side
+                                          ? 'border-accent-500/60 bg-accent-500/15 text-accent-300'
+                                          : 'border-dark-600 bg-dark-900/30 text-dark-300 hover:bg-dark-700'
+                                      }`}
+                                    >
+                                      {side === 'primary'
+                                        ? t('admin.users.detail.accountMerge.primarySubscription')
+                                        : t(
+                                            'admin.users.detail.accountMerge.secondarySubscription',
+                                          )}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                          <button
+                            onClick={() =>
+                              handleInlineConfirm(
+                                `mergeAccounts-${mergeTarget.id}`,
+                                handleMergeAccounts,
+                              )
+                            }
+                            disabled={actionLoading}
+                            className={`w-full rounded-lg px-3 py-2 text-sm font-medium transition-all disabled:opacity-50 ${
+                              confirmingAction === `mergeAccounts-${mergeTarget.id}`
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                            }`}
+                          >
+                            {confirmingAction === `mergeAccounts-${mergeTarget.id}`
+                              ? t('admin.users.detail.actions.areYouSure')
+                              : t('admin.users.detail.accountMerge.submit')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
