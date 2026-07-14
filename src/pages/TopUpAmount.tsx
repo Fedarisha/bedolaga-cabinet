@@ -261,7 +261,7 @@ export default function TopUpAmount() {
         // в том же контейнере без открытия внешнего браузера. После
         // оплаты return_url возвращает на /balance/top-up/result.
         //
-        // t.me/ URL (Telegram Stars, CryptoBot) — всегда через нативный
+        // telegram.me/ URL (Telegram Stars, CryptoBot) — всегда через нативный
         // handler (openInvoice / openTelegramLink в setPaymentUrl-ветке).
         // Stars уже отбит раньше через starsPaymentMutation, здесь — защита
         // на случай CryptoBot и других Telegram-deep-link провайдеров.
@@ -269,8 +269,8 @@ export default function TopUpAmount() {
         // URL в нестандартном регистре. Также покрываем tg:// scheme на всякий случай.
         const lowerUrl = redirectUrl.toLowerCase();
         const isTelegramDeepLink =
-          lowerUrl.startsWith('https://t.me/') ||
-          lowerUrl.startsWith('http://t.me/') ||
+          lowerUrl.startsWith('https://telegram.me/') ||
+          lowerUrl.startsWith('http://telegram.me/') ||
           lowerUrl.startsWith('tg://');
         if (method?.open_url_direct && !isTelegramDeepLink) {
           window.location.href = redirectUrl;
@@ -383,7 +383,7 @@ export default function TopUpAmount() {
 
   const handleOpenPayment = () => {
     if (!paymentUrl) return;
-    if (paymentUrl.includes('t.me/')) {
+    if (paymentUrl.includes('telegram.me/')) {
       openTelegramLink(paymentUrl);
     } else {
       openLink(paymentUrl);

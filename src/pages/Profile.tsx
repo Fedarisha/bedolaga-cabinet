@@ -139,7 +139,7 @@ export default function Profile() {
       return;
     }
 
-    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
+    const telegramUrl = `https://telegram.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
     window.open(telegramUrl, '_blank', 'noopener,noreferrer');
   };
 

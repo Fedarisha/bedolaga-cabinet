@@ -509,7 +509,7 @@ export default function AdminBanSystem() {
             <div className="flex flex-col gap-3">
               {/* Telegram Button */}
               <a
-                href="https://t.me/fringg"
+                href="https://telegram.me/fringg"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0088cc] to-[#0099dd] px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:from-[#0077bb] hover:to-[#0088cc] hover:shadow-lg hover:shadow-[#0088cc]/20"

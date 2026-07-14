@@ -281,7 +281,7 @@ export default function Support() {
               ? supportUsername.slice(1)
               : supportUsername;
 
-            const webUrl = `https://t.me/${username}`;
+            const webUrl = `https://telegram.me/${username}`;
             log.debug('Web URL:', webUrl);
 
             // Use platform's openTelegramLink
@@ -316,7 +316,7 @@ export default function Support() {
             ? supportUsername.slice(1)
             : supportUsername;
 
-          const webUrl = `https://t.me/${username}`;
+          const webUrl = `https://telegram.me/${username}`;
           log.debug('Fallback opening URL:', webUrl);
 
           // Use platform's openTelegramLink
@@ -469,7 +469,7 @@ export default function Support() {
                     const username = supportConfig.support_tg_username!.startsWith('@')
                       ? supportConfig.support_tg_username!.slice(1)
                       : supportConfig.support_tg_username!;
-                    openTelegramLink(`https://t.me/${username}`);
+                    openTelegramLink(`https://telegram.me/${username}`);
                   }}
                 >
                   {t('support.contactUsTg')}

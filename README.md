@@ -328,10 +328,10 @@ bedolaga-cabinet/
 ## Связанные проекты
 
 - [Remnawave Bedolaga Telegram Bot](https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot) — Backend бота
-- [Bedolaga Chat](https://t.me/+wTdMtSWq8YdmZmVi) — Чат поддержки
+- [Bedolaga Chat](https://telegram.me/+wTdMtSWq8YdmZmVi) — Чат поддержки
 
 ## Контакты
 
-- Telegram: [@fringg](https://t.me/fringg)
-- Telegram: [@pedzeo](https://t.me/pedzeo)
-- Чат: [Bedolaga Chat](https://t.me/+wTdMtSWq8YdmZmVi)
+- Telegram: [@fringg](https://telegram.me/fringg)
+- Telegram: [@pedzeo](https://telegram.me/pedzeo)
+- Чат: [Bedolaga Chat](https://telegram.me/+wTdMtSWq8YdmZmVi)

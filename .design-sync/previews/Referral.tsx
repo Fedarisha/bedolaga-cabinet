@@ -10,7 +10,7 @@ export const Default = () => (
         ['referral-info'],
         {
           referral_code: 'IVAN2026',
-          referral_link: 'https://t.me/bedolaga_bot?start=IVAN2026',
+          referral_link: 'https://telegram.me/bedolaga_bot?start=IVAN2026',
           total_earned: 350,
           total_earned_rubles: 350,
           invited_count: 4,

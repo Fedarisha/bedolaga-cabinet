@@ -1632,7 +1632,7 @@
       "methodEnabled": "Метод включён",
       "providerNotConfigured": "Провайдер не настроен в env",
       "openUrlDirect": "Открывать страницу оплаты сразу",
-      "openUrlDirectHint": "Без панели со ссылкой — провайдер открывается внутри MiniApp/вкладки сразу после клика. После оплаты юзер возвращается на /balance/top-up/result. Для Stars/CryptoBot и других t.me/-ссылок флаг игнорируется.",
+      "openUrlDirectHint": "Без панели со ссылкой — провайдер открывается внутри MiniApp/вкладки сразу после клика. После оплаты юзер возвращается на /balance/top-up/result. Для Stars/CryptoBot и других telegram.me/-ссылок флаг игнорируется.",
       "displayName": "Отображаемое имя",
       "displayNameHint": "Оставьте пустым для имени по умолчанию",
       "subOptions": "Варианты оплаты",
@@ -1998,7 +1998,7 @@
         "channelId": "ID канала",
         "channelIdHint": "-100XXXXXXXXXX",
         "channelLink": "Ссылка на канал",
-        "channelLinkHint": "https://t.me/channel",
+        "channelLinkHint": "https://telegram.me/channel",
         "submit": "Добавить",
         "save": "Сохранить",
         "cancel": "Отмена"

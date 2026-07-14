@@ -432,7 +432,7 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
   if (scriptFailed) {
     const resolvedBotUsername = deepLinkBotUsername || botUsername;
     const deepLinkUrl = deepLinkToken
-      ? `https://t.me/${resolvedBotUsername}?start=webauth_${deepLinkToken}`
+      ? `https://telegram.me/${resolvedBotUsername}?start=webauth_${deepLinkToken}`
       : '';
     const startCommand = deepLinkToken ? `/start webauth_${deepLinkToken}` : '';
 
@@ -553,8 +553,8 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
         <a
           href={
             referralCode
-              ? `https://t.me/${botUsername}?start=${encodeURIComponent(referralCode)}`
-              : `https://t.me/${botUsername}`
+              ? `https://telegram.me/${botUsername}?start=${encodeURIComponent(referralCode)}`
+              : `https://telegram.me/${botUsername}`
           }
           target="_blank"
           rel="noopener noreferrer"

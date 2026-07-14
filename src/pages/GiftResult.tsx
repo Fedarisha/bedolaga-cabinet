@@ -57,7 +57,9 @@ function CodeOnlySuccessState({
   const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined;
   // Encode underscores as %5F so Telegram auto-link detection doesn't strip them
   const safeCode = shortCode.replace(/_/g, '%5F');
-  const botLink = botUsername ? `https://t.me/${botUsername}?start=GIFT%5F${safeCode}` : null;
+  const botLink = botUsername
+    ? `https://telegram.me/${botUsername}?start=GIFT%5F${safeCode}`
+    : null;
   const cabinetLink = `${window.location.origin}/gift?tab=activate&code=${safeCode}`;
 
   const fullMessage = [

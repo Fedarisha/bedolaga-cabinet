@@ -146,7 +146,7 @@ export default function OAuthCallback() {
     !(serverLinkResult.merge_required && serverLinkResult.merge_token)
   ) {
     const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '';
-    const telegramLink = botUsername ? `https://t.me/${botUsername}` : '';
+    const telegramLink = botUsername ? `https://telegram.me/${botUsername}` : '';
 
     return (
       <div className="flex min-h-screen items-center justify-center px-4 py-8">
@@ -186,7 +186,7 @@ export default function OAuthCallback() {
     const isServerMode = errorMode === 'link-server';
     const isLinkBrowserMode = errorMode === 'link-browser';
     const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '';
-    const telegramLink = botUsername ? `https://t.me/${botUsername}` : '';
+    const telegramLink = botUsername ? `https://telegram.me/${botUsername}` : '';
 
     const errorAction =
       isServerMode && telegramLink ? (

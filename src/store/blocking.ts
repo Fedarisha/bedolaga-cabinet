@@ -39,7 +39,7 @@ interface AccountDeletedInfo {
   message: string;
   /** Bot username (without @) for building the Telegram deep link client-side as fallback. */
   bot_username?: string;
-  /** Full Telegram deep-link URL (`https://t.me/<bot>?start=revive`). Empty when bot is unconfigured. */
+  /** Full Telegram deep-link URL (`https://telegram.me/<bot>?start=revive`). Empty when bot is unconfigured. */
   telegram_deep_link?: string;
 }
 
