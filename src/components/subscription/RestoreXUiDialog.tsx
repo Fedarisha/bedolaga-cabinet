@@ -22,11 +22,14 @@ interface RestoreXUiDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: (result: XUiMigrateResponse) => void;
+  targetUserId?: number;
+  targetUserLabel?: string;
 }
 
 const KNOWN_ERROR_CODES: XUiMigrationErrorCode[] = [
   'invalid_url',
   'not_found',
+  'expired',
   'already_migrated',
   'tariff_missing',
 ];
@@ -57,7 +60,13 @@ function extractErrorCode(error: unknown): XUiMigrationErrorCode | null {
   }
 }
 
-export default function RestoreXUiDialog({ open, onOpenChange, onSuccess }: RestoreXUiDialogProps) {
+export default function RestoreXUiDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+  targetUserId,
+  targetUserLabel,
+}: RestoreXUiDialogProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -65,11 +74,17 @@ export default function RestoreXUiDialog({ open, onOpenChange, onSuccess }: Rest
   const [error, setError] = useState<string | null>(null);
 
   const migrateMutation = useMutation({
-    mutationFn: (value: string) => xUiMigrationApi.migrate(value),
+    mutationFn: (value: string) =>
+      targetUserId == null
+        ? xUiMigrationApi.migrate(value)
+        : xUiMigrationApi.migrateForUser(targetUserId, value),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['trial-info'] });
+      if (targetUserId != null) {
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      }
       showToast({
         type: 'success',
         title: t('xUiMigration.successTitle', 'Подписка восстановлена'),
@@ -125,10 +140,16 @@ export default function RestoreXUiDialog({ open, onOpenChange, onSuccess }: Rest
         <DialogHeader className="pr-8">
           <DialogTitle>{t('xUiMigration.title', 'Восстановление старой подписки')}</DialogTitle>
           <DialogDescription>
-            {t(
-              'xUiMigration.description',
-              'Вставьте ссылку старой подписки, чтобы перенести подписку в новую систему.',
-            )}
+            {targetUserId != null
+              ? t('xUiMigration.adminDescription', {
+                  defaultValue:
+                    'Вставьте ссылку старой подписки. Подписка будет восстановлена пользователю {{user}}.',
+                  user: targetUserLabel || `#${targetUserId}`,
+                })
+              : t(
+                  'xUiMigration.description',
+                  'Вставьте ссылку старой подписки, чтобы перенести подписку в новую систему.',
+                )}
           </DialogDescription>
         </DialogHeader>
 
@@ -183,6 +204,7 @@ export default function RestoreXUiDialog({ open, onOpenChange, onSuccess }: Rest
 const DEFAULT_ERROR_MESSAGES: Record<XUiMigrationErrorCode, string> = {
   invalid_url: 'Некорректная ссылка. Проверьте формат и попробуйте ещё раз.',
   not_found: 'Клиент с такой ссылкой не найден. Обратитесь в поддержку.',
+  expired: 'Срок действия старой подписки уже истёк.',
   already_migrated: 'Эта подписка уже перенесена в новую систему.',
   tariff_missing: 'Подходящий тариф не настроен. Обратитесь в поддержку.',
 };

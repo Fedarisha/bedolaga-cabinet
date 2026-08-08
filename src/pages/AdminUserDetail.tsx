@@ -27,6 +27,7 @@ import { usePermissionStore } from '../store/permissions';
 import { MessageMediaGrid } from '../components/tickets/MessageMediaGrid';
 import { linkifyText } from '../utils/linkify';
 import { getFlagEmoji } from '../utils/subscriptionHelpers';
+import RestoreXUiDialog from '../components/subscription/RestoreXUiDialog';
 
 // ============ Helpers ============
 
@@ -333,6 +334,7 @@ export default function AdminUserDetail() {
   const [activeSubscriptionId, setActiveSubscriptionId] = useState<number | null>(null);
   const hasAutoSelectedSub = useRef(false);
   const [subscriptionDetailView, setSubscriptionDetailView] = useState(false);
+  const [restoreSubscriptionOpen, setRestoreSubscriptionOpen] = useState(false);
 
   // Promo group
   const [promoGroups, setPromoGroups] = useState<PromoGroup[]>([]);
@@ -2183,6 +2185,39 @@ export default function AdminUserDetail() {
         {/* Subscription Tab */}
         {activeTab === 'subscription' && (
           <div className="space-y-4">
+            {hasPermission('users:subscription') && (
+              <button
+                type="button"
+                onClick={() => setRestoreSubscriptionOpen(true)}
+                className="flex w-full items-center justify-between rounded-xl border border-accent-500/25 bg-accent-500/10 p-4 text-left transition-colors hover:bg-accent-500/15"
+              >
+                <div>
+                  <div className="text-sm font-medium text-accent-300">
+                    {t('xUiMigration.restoreButton', 'Восстановить старую подписку')}
+                  </div>
+                  <div className="mt-1 text-xs text-dark-400">
+                    {t(
+                      'xUiMigration.restoreHint',
+                      'Перенос подписки из старой системы по VLESS-ссылке или UUID клиента',
+                    )}
+                  </div>
+                </div>
+                <svg
+                  className="ml-4 h-5 w-5 shrink-0 text-accent-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
+                  />
+                </svg>
+              </button>
+            )}
+
             {/* Multi-subscription: Level 1 — subscription list */}
             {userSubscriptions.length > 1 && !subscriptionDetailView && (
               <>
@@ -4275,6 +4310,20 @@ export default function AdminUserDetail() {
           </div>
         )}
       </div>
+
+      <RestoreXUiDialog
+        open={restoreSubscriptionOpen}
+        onOpenChange={setRestoreSubscriptionOpen}
+        targetUserId={user.id}
+        targetUserLabel={
+          user.username ? `@${user.username} (#${user.id})` : `${user.full_name} (#${user.id})`
+        }
+        onSuccess={(result) => {
+          setActiveSubscriptionId(result.subscription_id);
+          setSubscriptionDetailView(true);
+          void loadUser();
+        }}
+      />
     </div>
   );
 }

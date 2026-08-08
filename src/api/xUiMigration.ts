@@ -14,6 +14,7 @@ export interface XUiMigrateResponse {
 export type XUiMigrationErrorCode =
   | 'invalid_url'
   | 'not_found'
+  | 'expired'
   | 'already_migrated'
   | 'tariff_missing';
 
@@ -27,6 +28,14 @@ export const xUiMigrationApi = {
     const response = await apiClient.post<XUiMigrateResponse>('/cabinet/x-ui-migration/migrate', {
       link,
     });
+    return response.data;
+  },
+
+  migrateForUser: async (userId: number, link: string): Promise<XUiMigrateResponse> => {
+    const response = await apiClient.post<XUiMigrateResponse>(
+      `/cabinet/admin/users/${userId}/x-ui-migration`,
+      { link },
+    );
     return response.data;
   },
 };
