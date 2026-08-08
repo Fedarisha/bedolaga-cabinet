@@ -122,8 +122,26 @@ done < <(grep -oE '/assets/[^"[:space:]]+\.(js|css)' "$remote_stage/index.html" 
 
 expected_index_hash="$(sha256sum "$remote_stage/index.html" | awk '{print $1}')"
 
+compose_recreate() {
+  (
+    cd "$remote_dir"
+    if docker compose version >/dev/null 2>&1; then
+      docker compose up -d --force-recreate
+    elif docker-compose version >/dev/null 2>&1; then
+      # Compose v1 fails with KeyError: ContainerConfig when recreating a
+      # container against recent Docker Engine versions. Removing the old
+      # container first avoids that incompatible code path.
+      docker-compose down --remove-orphans
+      docker-compose up -d
+    else
+      printf 'Neither Docker Compose v2 nor docker-compose v1 is installed.\n' >&2
+      return 1
+    fi
+  )
+}
+
 # Keep exactly one known-good release. The running Caddy container continues
-# serving the old directory inode until docker-compose recreates its bind mount.
+# serving the old directory inode until Compose recreates its bind mount.
 if [[ -e "$remote_previous" ]]; then
   rm -rf -- "$remote_previous"
 fi
@@ -149,17 +167,11 @@ rollback() {
   mv -- "$remote_dist" "$failed_dist"
   if [[ "$had_previous" == true && -e "$remote_previous" ]]; then
     mv -- "$remote_previous" "$remote_dist"
-    (
-      cd "$remote_dir"
-      docker-compose up -d --force-recreate
-    ) || true
+    compose_recreate || true
   fi
 }
 
-if ! (
-  cd "$remote_dir"
-  docker-compose up -d --force-recreate
-); then
+if ! compose_recreate; then
   printf 'Container recreation failed; restoring previous build.\n' >&2
   rollback
   exit 1
