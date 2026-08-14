@@ -59,6 +59,97 @@
         background-color: #0a0f1a;
       }
     </style>
+    <script>
+      // The React error boundary cannot handle failures that happen before the
+      // entry module starts. Recover once from a stalled/failed module load,
+      // then show a useful fallback instead of leaving an empty dark page.
+      (function () {
+        var retryKey = 'cabinet_boot_retry_ts';
+        var retryParam = '__boot_retry';
+        var fallbackShown = false;
+
+        function cleanRetryParam() {
+          try {
+            var url = new URL(window.location.href);
+            if (url.searchParams.has(retryParam)) {
+              url.searchParams.delete(retryParam);
+              window.history.replaceState(window.history.state, '', url.toString());
+            }
+          } catch (_) {}
+        }
+
+        function recoverBoot() {
+          var root = document.getElementById('root');
+          if (!root || root.childNodes.length > 0 || fallbackShown) return;
+
+          var now = Date.now();
+          var lastRetry = 0;
+          try {
+            lastRetry = Number(sessionStorage.getItem(retryKey) || '0');
+          } catch (_) {}
+
+          if (now - lastRetry > 60000) {
+            try {
+              sessionStorage.setItem(retryKey, String(now));
+              var retryUrl = new URL(window.location.href);
+              retryUrl.searchParams.set(retryParam, String(now));
+              window.location.replace(retryUrl.toString());
+              return;
+            } catch (_) {
+              window.location.reload();
+              return;
+            }
+          }
+
+          fallbackShown = true;
+          root.innerHTML =
+            '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;color:#e5e7eb;font-family:system-ui,sans-serif">' +
+            '<div style="max-width:420px;text-align:center">' +
+            '<div style="font-size:36px;margin-bottom:16px">⚠️</div>' +
+            '<h1 style="font-size:20px;margin:0 0 10px">Не удалось загрузить кабинет</h1>' +
+            '<p style="color:#9ca3af;line-height:1.5;margin:0 0 20px">Проверьте соединение и попробуйте ещё раз.</p>' +
+            '<button type="button" onclick="window.location.reload()" style="border:0;border-radius:12px;background:#0ea5e9;color:white;padding:12px 22px;font-size:15px;cursor:pointer">Повторить</button>' +
+            '</div></div>';
+        }
+
+        window.addEventListener('DOMContentLoaded', function () {
+          var root = document.getElementById('root');
+          if (!root) return;
+
+          var observer = new MutationObserver(function () {
+            if (!fallbackShown && root.childNodes.length > 0) {
+              observer.disconnect();
+              try {
+                sessionStorage.removeItem(retryKey);
+              } catch (_) {}
+              cleanRetryParam();
+            }
+          });
+          observer.observe(root, { childList: true });
+          window.setTimeout(recoverBoot, 8000);
+        });
+
+        window.addEventListener('vite:preloadError', function (event) {
+          event.preventDefault();
+          window.setTimeout(recoverBoot, 0);
+        });
+
+        window.addEventListener(
+          'error',
+          function (event) {
+            var target = event.target;
+            var isAppAsset =
+              target &&
+              (target.tagName === 'SCRIPT' ||
+                (target.tagName === 'LINK' && target.href.indexOf('/assets/') !== -1));
+            if (isAppAsset) {
+              window.setTimeout(recoverBoot, 0);
+            }
+          },
+          true
+        );
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
