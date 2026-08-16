@@ -55,6 +55,7 @@ export interface AnalyticsCounters {
 }
 
 const BRANDING_CACHE_KEY = 'cabinet_branding';
+const STATIC_LOGO_URL = '/vpn_logo.png';
 
 // In-memory blob URL cache to avoid exposing backend URL.
 // This is only valid for the current page lifetime — it's reset on reload,
@@ -75,7 +76,10 @@ export function subscribeLogoBlob(listener: BlobListener): () => void {
   };
 }
 
-export const isLogoPreloaded = (): boolean => _logoBlobUrl !== null;
+// The bundled logo is an immediate same-origin fallback. The API copy may be
+// slow to arrive, so UI chrome must not wait for it and render the letter
+// placeholder in the meantime.
+export const isLogoPreloaded = (): boolean => Boolean(_logoBlobUrl || STATIC_LOGO_URL);
 
 // Get cached branding from sessionStorage
 export const getCachedBranding = (): BrandingInfo | null => {
@@ -128,7 +132,7 @@ export const preloadLogo = async (branding: BrandingInfo): Promise<void> => {
 };
 
 // Get the blob URL for the logo (safe, doesn't expose backend)
-export const getLogoBlobUrl = (): string | null => _logoBlobUrl;
+export const getLogoBlobUrl = (): string | null => _logoBlobUrl || STATIC_LOGO_URL;
 
 // Initialize logo preload from cache on page load
 export const initLogoPreload = () => {
