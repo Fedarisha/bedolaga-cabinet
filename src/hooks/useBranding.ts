@@ -40,19 +40,6 @@ export function useBranding() {
     document.title = appName || 'VPN';
   }, [appName]);
 
-  // Update favicon
-  useEffect(() => {
-    if (!logoUrl) return;
-
-    const link =
-      document.querySelector<HTMLLinkElement>("link[rel*='icon']") ||
-      document.createElement('link');
-    link.type = 'image/x-icon';
-    link.rel = 'shortcut icon';
-    link.href = logoUrl;
-    document.head.appendChild(link);
-  }, [logoUrl]);
-
   // Fullscreen setting from server
   const { data: fullscreenSetting } = useQuery({
     queryKey: ['fullscreen-enabled'],

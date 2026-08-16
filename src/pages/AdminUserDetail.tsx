@@ -3637,8 +3637,8 @@ export default function AdminUserDetail() {
               )}
               <div className="mb-1 text-sm text-dark-400">Remnawave UUID</div>
               <div className="break-all font-mono text-sm text-dark-100">
-                {syncStatus?.remnawave_uuid ||
-                  user.remnawave_uuid ||
+                {syncStatus?.remnawave_id ||
+                  user.remnawave_id ||
                   t('admin.users.detail.sync.notLinked')}
               </div>
             </div>

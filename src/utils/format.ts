@@ -9,6 +9,8 @@ export function formatUptime(seconds: number): string {
   return `${minutes}m`;
 }
 
+import { uiLocale } from './uiLocale';
+
 const DEFAULT_CURRENCY = { currency: 'RUB', locale: 'ru-RU', symbol: '₽' };
 
 export function formatPrice(kopeks: number, lang?: string): string {
@@ -24,4 +26,14 @@ export function formatPrice(kopeks: number, lang?: string): string {
   } catch {
     return `${Math.round(rubles)} ${config.symbol}`;
   }
+}
+
+/** Date-only (dd.mm.yyyy) in the active UI locale; '-' for a null date. */
+export function formatShortDate(date: string | null): string {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString(uiLocale(), {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }

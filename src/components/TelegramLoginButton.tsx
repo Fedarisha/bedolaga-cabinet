@@ -9,6 +9,7 @@ import { useAuthStore } from '../store/auth';
 import { useNavigate } from 'react-router';
 import { getPendingCampaignSlug } from '../utils/campaign';
 import { copyToClipboard } from '../utils/clipboard';
+import { isEndpointMissingError } from '../utils/api-error';
 
 interface TelegramLoginButtonProps {
   referralCode?: string;
@@ -159,7 +160,6 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
     isOIDC,
     widgetConfig?.oidc_client_id,
     widgetConfig?.request_access,
-    t,
     scriptLoaded,
     handleScriptFailed,
   ]);
@@ -330,8 +330,9 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
         },
         (expires_in || 300) * 1000,
       );
-    } catch {
-      setDeepLinkError(t('common.error'));
+    } catch (err) {
+      // 404 = the deep-link auth routes don't exist on this bot build (< v3.33.0)
+      setDeepLinkError(t(isEndpointMissingError(err) ? 'auth.botOutdated' : 'common.error'));
     }
   }, [botUsername, loginWithDeepLink, navigate, t]);
 
@@ -421,9 +422,11 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
   }, [deepLinkPolling, deepLinkToken, loginWithDeepLink, navigate, t]);
 
   if (!botUsername || botUsername === 'your_bot') {
+    // 404 on the config route = the bot build predates the cabinet endpoints,
+    // which reads as "not configured" but is actually a version mismatch (#345).
     return (
-      <div className="py-4 text-center text-sm text-gray-500">
-        {t('auth.telegramNotConfigured')}
+      <div className="py-4 text-center text-sm text-dark-400">
+        {t(widgetConfig?.endpoint_missing ? 'auth.botOutdated' : 'auth.telegramNotConfigured')}
       </div>
     );
   }
@@ -499,7 +502,7 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
           </>
         ) : deepLinkError ? (
           <div className="flex flex-col items-center space-y-2">
-            <p className="text-xs text-red-500">{deepLinkError}</p>
+            <p className="text-xs text-error-500">{deepLinkError}</p>
             <button
               type="button"
               onClick={startDeepLinkAuth}
@@ -542,14 +545,14 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
             </svg>
             {oidcLoading ? t('common.loading') : t('auth.loginWithTelegram')}
           </button>
-          {oidcError && <p className="text-xs text-red-500">{oidcError}</p>}
+          {oidcError && <p className="text-xs text-error-500">{oidcError}</p>}
         </div>
       ) : (
         <div ref={containerRef} className="flex justify-center" />
       )}
 
       <div className="text-center">
-        <p className="mb-2 text-xs text-gray-500">{t('auth.orOpenInApp')}</p>
+        <p className="mb-2 text-xs text-dark-400">{t('auth.orOpenInApp')}</p>
         <a
           href={
             referralCode

@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { uiLocale } from '@/utils/uiLocale';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -9,46 +10,16 @@ import { infoApi } from '../api/info';
 import { useAuthStore } from '../store/auth';
 import { logger } from '../utils/logger';
 import { checkRateLimit, getRateLimitResetTime, RATE_LIMIT_KEYS } from '../utils/rateLimit';
-import type { TicketDetail } from '../types';
+import type { SupportConfig, TicketDetail } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { ChatIcon, CloseIcon, ImageIcon, PlusIcon, SendIcon } from '@/components/icons';
 import { usePlatform } from '@/platform';
 import { linkifyText } from '../utils/linkify';
+import { resolveSupportContact } from '../utils/supportContact';
 
 const log = logger.createLogger('Support');
-
-const PlusIcon = () => (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-  </svg>
-);
-
-const SendIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-    />
-  </svg>
-);
-
-const ImageIcon = () => (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-    />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
 
 // Media attachment state
 interface MediaAttachment {
@@ -68,6 +39,19 @@ export default function Support() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const queryClient = useQueryClient();
   const { openTelegramLink, openLink } = usePlatform();
+
+  const openSupportContact = useCallback(
+    (config: SupportConfig) => {
+      const target = resolveSupportContact(config);
+      if (!target) return;
+      if (target.kind === 'external') {
+        openLink(target.url, { tryInstantView: false });
+      } else {
+        openTelegramLink(target.url);
+      }
+    },
+    [openLink, openTelegramLink],
+  );
   const [selectedTicket, setSelectedTicket] = useState<TicketDetail | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -263,8 +247,14 @@ export default function Support() {
   if (supportConfig && !supportConfig.tickets_enabled) {
     log.debug('Tickets disabled, config:', supportConfig);
 
+    // Куда и чем открывать контакт — один резолв на весь блок. null → открывать
+    // нечего (пустой/битый конфиг), и кнопку тогда не рендерим вовсе.
+    const contact = resolveSupportContact(supportConfig);
+
     const getSupportMessage = () => {
       log.debug('Getting support message for type:', supportConfig.support_type);
+
+      const title = isAdmin ? t('support.ticketsDisabled') : t('support.title');
 
       if (supportConfig.support_type === 'profile') {
         const supportUsername = supportConfig.support_tg_username || '@support';
@@ -292,12 +282,9 @@ export default function Support() {
 
       if (supportConfig.support_type === 'url' && supportConfig.support_url) {
         return {
-          title: isAdmin ? t('support.ticketsDisabled') : t('support.title'),
+          title,
           message: t('support.useExternalLink'),
           buttonText: t('support.openSupport'),
-          buttonAction: () => {
-            openLink(supportConfig.support_url!, { tryInstantView: false });
-          },
         };
       }
 
@@ -305,7 +292,7 @@ export default function Support() {
       const supportUsername = supportConfig.support_tg_username || '@support';
       log.debug('Fallback: Opening profile:', supportUsername);
       return {
-        title: isAdmin ? t('support.ticketsDisabled') : t('support.title'),
+        title,
         message: t('support.contactSupport', { username: supportUsername }),
         buttonText: t('support.contactUsTg'),
         buttonAction: () => {
@@ -331,19 +318,7 @@ export default function Support() {
       <div className="mx-auto mt-12 max-w-md">
         <Card className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
-            <svg
-              className="h-8 w-8 text-dark-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
-              />
-            </svg>
+            <ChatIcon className="h-8 w-8 text-dark-400" />
           </div>
           <h2 className="mb-2 text-xl font-semibold text-dark-100">{supportMessage.title}</h2>
           <p className="mb-6 text-dark-400">{supportMessage.message}</p>
@@ -390,6 +365,7 @@ export default function Support() {
               <img
                 src={att.preview}
                 alt="Preview"
+                loading="lazy"
                 className="h-16 w-16 rounded-lg border border-dark-700 object-cover"
               />
             ) : (
@@ -398,21 +374,21 @@ export default function Support() {
               </div>
             )}
             {att.uploading && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-dark-950/50">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
               </div>
             )}
             {att.error && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-red-500/30">
-                <span className="text-xs text-red-300">!</span>
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-error-500/30">
+                <span className="text-xs text-error-300">!</span>
               </div>
             )}
             <button
               type="button"
               onClick={() => onRemove(idx)}
-              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-dark-600 text-dark-300 hover:bg-red-500 hover:text-white"
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-dark-600 text-dark-300 hover:bg-error-500 hover:text-white"
             >
-              <CloseIcon />
+              <CloseIcon className="h-4 w-4" />
             </button>
           </div>
         ))}
@@ -536,7 +512,7 @@ export default function Support() {
                     </span>
                   </div>
                   <div className="text-xs text-dark-500">
-                    {new Date(ticket.updated_at).toLocaleDateString()}
+                    {new Date(ticket.updated_at).toLocaleDateString(uiLocale())}
                   </div>
                 </button>
               ))}
@@ -544,19 +520,7 @@ export default function Support() {
           ) : (
             <div className="py-12 text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
-                <svg
-                  className="h-8 w-8 text-dark-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
-                  />
-                </svg>
+                <ChatIcon className="h-8 w-8 text-dark-500" />
               </div>
               <div className="text-dark-400">{t('support.noTickets')}</div>
             </div>
@@ -585,8 +549,11 @@ export default function Support() {
                 className="space-y-4"
               >
                 <div>
-                  <label className="label">{t('support.subject')}</label>
+                  <label htmlFor="support-subject" className="label">
+                    {t('support.subject')}
+                  </label>
                   <input
+                    id="support-subject"
                     type="text"
                     className="input"
                     placeholder={t('support.subjectPlaceholder')}
@@ -598,8 +565,11 @@ export default function Support() {
                   />
                 </div>
                 <div>
-                  <label className="label">{t('support.message')}</label>
+                  <label htmlFor="support-message" className="label">
+                    {t('support.message')}
+                  </label>
                   <textarea
+                    id="support-message"
                     className="input min-h-[150px]"
                     placeholder={t('support.messagePlaceholder')}
                     value={newMessage}
@@ -660,7 +630,7 @@ export default function Support() {
                     disabled={createAttachments.some((a) => a.uploading)}
                     loading={createMutation.isPending}
                   >
-                    <SendIcon />
+                    <SendIcon className="h-4 w-4" />
                     <span className="ml-2">{t('support.send')}</span>
                   </Button>
                   <Button
@@ -689,7 +659,7 @@ export default function Support() {
                     </span>
                     <span className="text-xs text-dark-500">
                       {t('support.created')}{' '}
-                      {new Date(selectedTicket.created_at).toLocaleDateString()}
+                      {new Date(selectedTicket.created_at).toLocaleDateString(uiLocale())}
                     </span>
                   </div>
                 </div>
@@ -718,7 +688,7 @@ export default function Support() {
                           {msg.is_from_admin ? t('support.supportTeam') : t('support.you')}
                         </span>
                         <span className="text-xs text-dark-500">
-                          {new Date(msg.created_at).toLocaleString()}
+                          {new Date(msg.created_at).toLocaleString(uiLocale())}
                         </span>
                       </div>
                       {msg.message_text && (
@@ -812,7 +782,7 @@ export default function Support() {
                         }
                         loading={replyMutation.isPending}
                       >
-                        <SendIcon />
+                        <SendIcon className="h-4 w-4" />
                       </Button>
                     </div>
                     {rateLimitError && (

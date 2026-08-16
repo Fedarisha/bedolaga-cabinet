@@ -36,8 +36,10 @@ ENV VITE_SEO_TITLE=$VITE_SEO_TITLE
 ENV VITE_SEO_DESCRIPTION=$VITE_SEO_DESCRIPTION
 ENV VITE_SEO_IMAGE=$VITE_SEO_IMAGE
 
-# Build the application
-RUN npm run build
+# Build the application. Type-check намеренно пропущен: tsc --noEmit уже
+# гоняется CI на каждый PR (lint.yml), образ собирается из проверенного
+# коммита - повторная проверка стоила бы ~10s на каждую сборку.
+RUN npm run build:docker
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
@@ -52,3 +54,4 @@ EXPOSE 80
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+

@@ -1,3 +1,4 @@
+import { uiLocale } from '@/utils/uiLocale';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
@@ -57,7 +58,7 @@ export default function SubscriptionCardActive({
   const isAtDeviceLimit =
     subscription.device_limit > 0 && connectedDevices >= subscription.device_limit;
 
-  const formattedDate = new Date(subscription.end_date).toLocaleDateString();
+  const formattedDate = new Date(subscription.end_date).toLocaleDateString(uiLocale());
   const daysLeft = subscription.days_left;
   const safePercent = Math.min(Math.max(usedPercent, 0), 100);
   const trafficLabel = isUnlimited
