@@ -37,6 +37,30 @@ cd "$REPO_ROOT"
 
 log() { printf '\033[1;34m[deploy]\033[0m %s\n' "$*"; }
 
+retry() {
+  local max_attempts="$1"
+  local delay_seconds="$2"
+  shift 2
+
+  local attempt=1
+  while true; do
+    if "$@"; then
+      return 0
+    fi
+
+    if ((attempt >= max_attempts)); then
+      printf '[deploy] Command failed after %d attempts: %s\n' "$attempt" "$*" >&2
+      return 1
+    fi
+
+    printf '[deploy] Attempt %d/%d failed; retrying in %ds: %s\n' \
+      "$attempt" "$max_attempts" "$delay_seconds" "$*" >&2
+    sleep "$delay_seconds"
+    attempt=$((attempt + 1))
+    delay_seconds=$((delay_seconds * 2))
+  done
+}
+
 cleanup() {
   if docker inspect "$TMP_CONTAINER" >/dev/null 2>&1; then
     docker rm -f "$TMP_CONTAINER" >/dev/null 2>&1 || true
@@ -45,7 +69,7 @@ cleanup() {
 trap cleanup EXIT
 
 log "Building image via docker compose"
-docker-compose build
+retry "${DOCKER_BUILD_ATTEMPTS:-4}" "${DOCKER_BUILD_RETRY_DELAY:-3}" docker-compose build
 
 IMAGE="bedolaga-cabinet_cabinet-frontend:latest"
 log "Built image: $IMAGE"
