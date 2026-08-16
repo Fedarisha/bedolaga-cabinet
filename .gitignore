@@ -50,6 +50,13 @@ miniapp/
 .ai/
 CLAUDE.md
 **/CLAUDE.md
+
+# Impeccable design context (local only, not for shared repo)
+PRODUCT.md
+DESIGN.md
+DESIGN.json
+
+# Local design-sync artifacts
 .ds-sync/
 ds-bundle/
 .design-sync/.cache/

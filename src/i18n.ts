@@ -2,31 +2,35 @@ import i18n, { type ResourceLanguage } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import ru from './locales/ru.json';
 
-const FALLBACK_LNG = 'ru';
-const SUPPORTED_LANGS = [FALLBACK_LNG];
+const LANGUAGE = 'ru';
 
-i18n.use(initReactI18next).init({
-  lng: FALLBACK_LNG,
-  fallbackLng: FALLBACK_LNG,
-  supportedLngs: SUPPORTED_LANGS,
-  resources: {
-    [FALLBACK_LNG]: { translation: ru as ResourceLanguage },
-  },
+export const i18nReady: Promise<void> = i18n
+  .use(initReactI18next)
+  .init({
+    lng: LANGUAGE,
+    fallbackLng: LANGUAGE,
+    supportedLngs: [LANGUAGE],
+    resources: {
+      [LANGUAGE]: { translation: ru as ResourceLanguage },
+    },
+    interpolation: {
+      escapeValue: false,
+    },
+    react: {
+      useSuspense: false,
+    },
+    showSupportNotice: false,
+  })
+  .then(() => undefined);
 
-  interpolation: {
-    escapeValue: false,
-  },
+if (typeof document !== 'undefined') {
+  document.documentElement.lang = LANGUAGE;
+  document.documentElement.dir = 'ltr';
+}
 
-  react: {
-    useSuspense: false,
-  },
-
-  showSupportNotice: false,
-});
-
-document.documentElement.lang = FALLBACK_LNG;
-document.documentElement.dir = 'ltr';
-
-export const i18nReady: Promise<void> = Promise.resolve();
+// The fork intentionally ships a single locale. Keep the startup hook so the
+// Telegram/bootstrap flow stays compatible with upstream without switching to
+// a language whose bundle is not present.
+export function applyTelegramLanguage(): void {}
 
 export default i18n;

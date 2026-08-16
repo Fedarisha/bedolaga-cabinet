@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/auth';
@@ -17,11 +17,17 @@ import {
 } from '../api/branding';
 import { useLogoBlobUrl } from '../hooks/useLogoBlobUrl';
 import { getAndClearReturnUrl } from '../utils/token';
+import { getApiErrorMessage } from '../utils/api-error';
 import { useTelegramSDK } from '../hooks/useTelegramSDK';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import OAuthProviderIcon from '../components/OAuthProviderIcon';
 import { saveOAuthState } from '../utils/oauth';
 import { getPendingReferralCode } from '../utils/referral';
+import { UsersIcon, EmailIcon, ChevronDownIcon } from '@/components/icons';
+import LegalFooter from '../components/LegalFooter';
+import LegalConsent from '../components/LegalConsent';
+import { infoApi } from '../api/info';
+import type { LegalConsentConfig } from '../types';
 import {
   LEGACY_AUTH_RECOVERY_RETURN_URL,
   clearLegacyAuthRecovery,
@@ -34,7 +40,7 @@ import { requestAccountLinkingSuggestion } from '../utils/accountLinkingSuggesti
 const BLOCKED_LOGIN_PROVIDERS = new Set(['google', 'telegram']);
 
 export default function Login() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, loginWithEmail, registerWithEmail } = useAuthStore(
@@ -59,15 +65,79 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(() => isLogoPreloaded());
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
-  const [agreePersonalData, setAgreePersonalData] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [forgotPasswordError, setForgotPasswordError] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(true);
   const [isLegacyRecoveryOpen, setIsLegacyRecoveryOpen] = useState(false);
   const [openAccountsAfterLogin, setOpenAccountsAfterLogin] = useState(false);
   const isManualLoginRedirectRef = useRef(false);
+
+  // Гейт согласия с офертой/политикой для НОВОГО пользователя. Конфиг публичный:
+  // нужен до авторизации, чтобы нарисовать чекбоксы ещё на экране входа.
+  const { data: legalConsent } = useQuery<LegalConsentConfig>({
+    queryKey: ['legal-consent-config', i18n.language],
+    queryFn: () => infoApi.getLegalConsentConfig(i18n.language),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+  const consentDocuments = useMemo(() => legalConsent?.documents ?? [], [legalConsent]);
+  const [acceptedDocuments, setAcceptedDocuments] = useState<Record<string, boolean>>({});
+  // Telegram-вход происходит сам собой, поэтому чекбоксы показываем только когда
+  // бэк ответил 428: пользователь новый и без согласия аккаунт не создастся.
+  // Замыкание помнит, какой именно вход повторить после простановки галочек.
+  const [pendingConsentRetry, setPendingConsentRetry] = useState<
+    ((accepted: string[]) => Promise<void>) | null
+  >(null);
+
+  useEffect(() => {
+    if (!legalConsent?.prechecked || consentDocuments.length === 0) return;
+    setAcceptedDocuments((prev) => {
+      const next = { ...prev };
+      for (const document of consentDocuments) {
+        if (next[document] === undefined) next[document] = true;
+      }
+      return next;
+    });
+  }, [legalConsent?.prechecked, consentDocuments]);
+
+  const acceptedDocumentKeys = useMemo(
+    () => consentDocuments.filter((document) => acceptedDocuments[document]),
+    [consentDocuments, acceptedDocuments],
+  );
+  const allDocumentsAccepted =
+    consentDocuments.length === 0 || acceptedDocumentKeys.length === consentDocuments.length;
+
+  const toggleDocument = useCallback((document: string, value: boolean) => {
+    setAcceptedDocuments((prev) => ({ ...prev, [document]: value }));
+  }, []);
+
+  // 428 = бэк требует согласие. Запоминаем, что повторить, и рисуем чекбоксы.
+  const captureConsentRequirement = useCallback(
+    (err: unknown, retry: (accepted: string[]) => Promise<void>): boolean => {
+      const error = err as { response?: { status?: number; data?: { detail?: unknown } } };
+      if (error.response?.status !== 428) return false;
+
+      const detail = error.response?.data?.detail as
+        | { documents?: string[]; prechecked?: boolean }
+        | undefined;
+      if (detail?.documents?.length) {
+        const documents = detail.documents;
+        setAcceptedDocuments((prev) => {
+          const next = { ...prev };
+          for (const document of documents) {
+            if (next[document] === undefined) next[document] = Boolean(detail.prechecked);
+          }
+          return next;
+        });
+      }
+      setPendingConsentRetry(() => retry);
+      return true;
+    },
+    [],
+  );
 
   // Telegram safe area insets
   const { safeAreaInset, contentSafeAreaInset } = useTelegramSDK();
@@ -116,6 +186,12 @@ export default function Login() {
     staleTime: 60000,
   });
   const isEmailAuthEnabled = emailAuthConfig?.enabled ?? true;
+
+  const { data: footerEnabled } = useQuery({
+    queryKey: ['footer-enabled'],
+    queryFn: brandingApi.getFooterEnabled,
+    staleTime: 60000,
+  });
 
   // Fetch enabled OAuth providers
   const { data: oauthData } = useQuery({
@@ -194,7 +270,7 @@ export default function Login() {
     }
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError('');
 
@@ -212,12 +288,6 @@ export default function Login() {
       }
       if (password.length < 8) {
         setError(t('auth.passwordTooShort', 'Password must be at least 8 characters'));
-        return;
-      }
-      if (!agreePersonalData) {
-        setError(
-          t('auth.mustAgreePersonalData', 'You must agree to the processing of personal data'),
-        );
         return;
       }
     }
@@ -239,6 +309,7 @@ export default function Login() {
           password,
           firstName || undefined,
           referralCode || undefined,
+          acceptedDocumentKeys,
         );
         if (!hasLegacyAuthRecoveryRequest()) {
           requestAccountLinkingSuggestion();
@@ -247,14 +318,32 @@ export default function Login() {
         setRegisteredEmail(result.email);
       }
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number; data?: { detail?: string } } };
+      const error = err as { response?: { status?: number } };
       const status = error.response?.status;
-      const detail = error.response?.data?.detail;
+      const detail = getApiErrorMessage(err, '');
 
-      if (status === 400 && detail?.includes('already registered')) {
+      // Конфиг чекбоксов мог протухнуть (админ включил гейт между загрузкой страницы
+      // и отправкой формы) — показываем недостающие галочки вместо сырой ошибки.
+      const needsConsent = captureConsentRequirement(err, async (accepted) => {
+        const retried = await registerWithEmail(
+          email,
+          password,
+          firstName || undefined,
+          referralCode || undefined,
+          accepted,
+        );
+        setPendingConsentRetry(null);
+        setRegisteredEmail(retried.email);
+      });
+      if (needsConsent) {
+        setIsLoading(false);
+        return;
+      }
+
+      if (status === 400 && detail.includes('already registered')) {
         setError(t('auth.emailAlreadyRegistered', 'This email is already registered'));
       } else if (status === 401 || status === 403) {
-        if (detail?.includes('verify your email')) {
+        if (detail.includes('verify your email')) {
           setError(t('auth.emailNotVerified', 'Please verify your email first'));
         } else {
           setError(t('auth.invalidCredentials', 'Invalid email or password'));
@@ -270,7 +359,7 @@ export default function Login() {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setForgotPasswordError('');
 
@@ -284,9 +373,7 @@ export default function Login() {
       await authApi.forgotPassword(forgotPasswordEmail.trim());
       setForgotPasswordSent(true);
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number; data?: { detail?: string } } };
-      const detail = error.response?.data?.detail;
-      setForgotPasswordError(detail || t('common.error'));
+      setForgotPasswordError(getApiErrorMessage(err, t('common.error')));
     } finally {
       setForgotPasswordLoading(false);
     }
@@ -301,7 +388,7 @@ export default function Login() {
 
   return (
     <div
-      className="flex min-h-[100dvh] flex-col items-center justify-center px-4 sm:px-6 lg:px-8"
+      className="flex min-h-[100dvh] items-center justify-center px-4 sm:px-6 lg:px-8"
       style={{
         paddingTop:
           safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
@@ -309,9 +396,10 @@ export default function Login() {
           safeBottom > 0 ? `${safeBottom + 16}px` : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {/* Background gradient */}
-      <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
+      {/* Flat background — the previous two layered gradients (linear
+          + accent radial halo) read as the airdrop / crypto aesthetic
+          PRODUCT.md explicitly anti-references. Body bg-dark-950 carries
+          the surface alone. */}
 
       {/* Language switcher */}
       <div
@@ -349,42 +437,66 @@ export default function Login() {
           {referralCode && isEmailAuthEnabled && (
             <div className="mt-3 rounded-xl border border-accent-500/30 bg-accent-500/10 p-2.5">
               <div className="flex items-center justify-center gap-2 text-accent-400">
-                <svg
-                  className="h-4 w-4 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                  />
-                </svg>
+                <UsersIcon className="h-4 w-4 flex-shrink-0" />
                 <span className="text-xs font-medium">{t('auth.referralInvite')}</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Check Email Screen */}
-        {registeredEmail ? (
+        {/* Экран согласия: бэк ответил 428 на автоматический Telegram-вход */}
+        {pendingConsentRetry ? (
+          <div className="card">
+            <h2 className="mb-2 text-lg font-bold text-dark-50">
+              {t('auth.legalConsentTitle', 'Ещё один шаг')}
+            </h2>
+            <p className="mb-4 text-sm text-dark-400">
+              {t(
+                'auth.legalConsentSubtitle',
+                'Чтобы создать аккаунт, подтвердите, что ознакомились с документами.',
+              )}
+            </p>
+
+            <LegalConsent
+              documents={consentDocuments}
+              accepted={acceptedDocuments}
+              onChange={toggleDocument}
+              disabled={isLoading}
+            />
+
+            {error && (
+              <p className="mt-4 text-sm text-error-400" role="alert">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="button"
+              className="btn-primary mt-5 w-full"
+              disabled={!allDocumentsAccepted || isLoading}
+              onClick={async () => {
+                setError('');
+                setIsLoading(true);
+                try {
+                  await pendingConsentRetry(acceptedDocumentKeys);
+                  setPendingConsentRetry(null);
+                } catch (err) {
+                  setError(getApiErrorMessage(err, t('common.error')));
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+            >
+              {isLoading
+                ? t('common.loading', 'Загрузка...')
+                : t('auth.legalConsentContinue', 'Продолжить')}
+            </button>
+          </div>
+        ) : /* Check Email Screen */
+        registeredEmail ? (
           <div className="card text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-success-500/20">
-              <svg
-                className="h-7 w-7 text-success-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                />
-              </svg>
+              <EmailIcon className="h-7 w-7 text-success-400" />
             </div>
             <h2 className="mb-2 text-lg font-bold text-dark-50">
               {t('auth.checkEmail', 'Check your email')}
@@ -411,20 +523,18 @@ export default function Login() {
           </div>
         ) : (
           /* Main auth card */
-          <div className="rounded-2xl border border-dark-700/80 bg-dark-900/95 p-5 shadow-2xl shadow-black/35 sm:p-6">
-            <div className="mb-5 text-center">
-              <h2 className="text-xl font-bold text-dark-50">{t('auth.loginTitle')}</h2>
-              <p className="mt-1 text-sm text-dark-400">{t('auth.loginSubtitle')}</p>
-            </div>
-
+          <div className="card">
             {error && (
-              <div className="mb-4 rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-2.5 text-sm text-error-400">
+              <div
+                role="alert"
+                className="mb-4 rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-2.5 text-sm text-error-400"
+              >
                 {error}
               </div>
             )}
 
-            {/* Legacy provider recovery */}
-            <div className="rounded-xl border border-warning-500/25 bg-warning-500/10">
+            {/* Legacy Google/Telegram account recovery */}
+            <div className="overflow-hidden rounded-xl border border-warning-500/25 bg-warning-500/5">
               <button
                 type="button"
                 onClick={handleLegacyRecoveryOpenToggle}
@@ -432,21 +542,14 @@ export default function Login() {
                 aria-expanded={isLegacyRecoveryOpen}
               >
                 <span>{t('auth.legacyLoginQuestion', 'Входили через Google или Telegram?')}</span>
-                <svg
+                <ChevronDownIcon
                   className={`h-4 w-4 shrink-0 text-dark-300 transition-transform duration-200 ${
                     isLegacyRecoveryOpen ? 'rotate-180' : ''
                   }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                />
               </button>
               {isLegacyRecoveryOpen && (
-                <div className="space-y-3 border-t border-warning-500/20 px-3.5 pb-3.5 pt-1">
+                <div className="space-y-3 border-t border-warning-500/20 px-3.5 pb-3.5 pt-3">
                   <p className="text-xs leading-relaxed text-dark-400">
                     {t(
                       'auth.legacyLoginShortHint',
@@ -454,15 +557,13 @@ export default function Login() {
                     )}
                   </p>
                   <div className="rounded-lg border border-dark-700/70 bg-dark-900/80 p-3 text-xs leading-relaxed text-dark-300">
-                    <p>
-                      {t('auth.legacyLoginLawNotice', {
-                        provider: 'Google или Telegram',
-                        defaultValue:
-                          'В связи с требованиями 199-ФЗ мы больше не можем использовать {{provider}} для входа. Войдите или зарегистрируйтесь любым доступным способом, затем на странице привязанных аккаунтов объедините новый вход со старым аккаунтом, чтобы не потерять подписки и баланс.',
-                      })}
-                    </p>
+                    {t('auth.legacyLoginLawNotice', {
+                      provider: 'Google или Telegram',
+                      defaultValue:
+                        'В связи с требованиями 199-ФЗ мы больше не можем использовать {{provider}} для входа. Войдите или зарегистрируйтесь любым доступным способом, затем на странице привязанных аккаунтов объедините новый вход со старым аккаунтом, чтобы не потерять подписки и баланс.',
+                    })}
                   </div>
-                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dark-700/60 bg-dark-900/80 p-3 text-xs text-dark-400">
+                  <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-dark-700/60 bg-dark-900/80 p-3 text-xs text-dark-400">
                     <input
                       type="checkbox"
                       checked={openAccountsAfterLogin}
@@ -477,324 +578,315 @@ export default function Login() {
 
             {/* OAuth providers - compact icon row */}
             {oauthProviders.length > 0 && (
-              <div className="mt-5">
-                <div className="grid grid-cols-2 gap-2.5">
+              <>
+                <div className="my-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-dark-700" />
+                  <span className="text-xs text-dark-500">{t('auth.or', 'or')}</span>
+                  <div className="h-px flex-1 bg-dark-700" />
+                </div>
+                <div className="flex items-stretch gap-2">
                   {oauthProviders.map((provider) => (
                     <button
                       key={provider.name}
                       type="button"
                       onClick={() => handleOAuthLogin(provider.name)}
                       disabled={oauthLoading !== null}
-                      className="flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-xl border border-dark-600/80 bg-dark-800 px-3 text-sm font-semibold text-dark-100 shadow-sm transition-all hover:border-dark-500 hover:bg-dark-700 disabled:opacity-50"
+                      className="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border border-dark-700 bg-dark-800/80 py-2.5 transition-all hover:border-dark-600 hover:bg-dark-700 disabled:opacity-50"
                       title={provider.display_name}
                     >
                       {oauthLoading === provider.name ? (
                         <span className="h-5 w-5 animate-spin rounded-full border-2 border-dark-400 border-t-white" />
                       ) : (
-                        <OAuthProviderIcon provider={provider.name} className="h-6 w-6" />
+                        <OAuthProviderIcon provider={provider.name} className="h-5 w-5" />
                       )}
-                      <span>{provider.display_name}</span>
+                      <span className="text-[10px] leading-none text-dark-500">
+                        {provider.display_name}
+                      </span>
                     </button>
                   ))}
                 </div>
-                <div className="my-4 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-dark-700/80" />
-                  <span className="text-xs font-medium text-dark-400">{t('auth.or', 'or')}</span>
-                  <div className="h-px flex-1 bg-dark-700/80" />
-                </div>
-              </div>
+              </>
             )}
 
-            {/* Email auth section */}
+            {/* Email auth section - collapsible */}
             {isEmailAuthEnabled && (
-              <div className={`${oauthProviders.length > 0 ? '' : 'mt-5 pt-1'} space-y-4 pb-1`}>
-                {showForgotPassword ? (
-                  /* Forgot password screen - replaces login/register */
-                  forgotPasswordSent ? (
-                    <div className="space-y-4 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-success-500/20">
-                        <svg
-                          className="h-6 w-6 text-success-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-sm font-medium text-dark-100">
-                        {t('auth.checkEmail', 'Check your email')}
-                      </p>
-                      <p className="text-xs text-dark-400">
-                        {t(
-                          'auth.passwordResetSent',
-                          'If an account exists with this email, we sent password reset instructions.',
-                        )}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={closeForgotPasswordModal}
-                        className="text-sm text-accent-400 transition-colors hover:text-accent-300"
-                      >
-                        {t('common.back', 'Back')}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <p className="text-center text-sm text-dark-400">
-                        {t(
-                          'auth.forgotPasswordHint',
-                          'Enter your email and we will send you instructions to reset your password.',
-                        )}
-                      </p>
-                      <form onSubmit={handleForgotPassword} className="space-y-3">
-                        <div>
-                          <label htmlFor="forgotEmail" className="label">
-                            Email
-                          </label>
-                          <input
-                            id="forgotEmail"
-                            type="email"
-                            value={forgotPasswordEmail}
-                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            className="input"
-                            autoFocus
-                          />
-                        </div>
-                        {forgotPasswordError && (
-                          <p className="text-sm text-error-400">{forgotPasswordError}</p>
-                        )}
-                        <button
-                          type="submit"
-                          disabled={forgotPasswordLoading}
-                          className="btn-primary w-full py-2.5"
-                        >
-                          {forgotPasswordLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                              {t('common.loading')}
-                            </span>
-                          ) : (
-                            t('auth.sendResetLink', 'Send reset link')
-                          )}
-                        </button>
-                      </form>
-                      <div className="text-center">
-                        <button
-                          type="button"
-                          onClick={closeForgotPasswordModal}
-                          className="text-sm text-dark-400 transition-colors hover:text-dark-200"
-                        >
-                          {t('common.back', 'Back')}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  /* Normal login / register */
-                  <>
-                    <div className="flex rounded-lg bg-dark-800 p-1">
-                      <button
-                        type="button"
-                        className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
-                          authMode === 'login'
-                            ? 'bg-accent-500 text-white'
-                            : 'text-dark-400 hover:text-dark-200'
-                        }`}
-                        onClick={() => setAuthMode('login')}
-                      >
-                        {t('auth.login')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
-                          authMode === 'register'
-                            ? 'bg-accent-500 text-white'
-                            : 'text-dark-400 hover:text-dark-200'
-                        }`}
-                        onClick={() => setAuthMode('register')}
-                      >
-                        {t('auth.register', 'Register')}
-                      </button>
-                    </div>
+              <>
+                <div className="my-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-dark-700" />
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailForm(!showEmailForm)}
+                    className="flex items-center gap-1.5 rounded-full border border-dark-700 bg-dark-800/60 px-3.5 py-1.5 text-xs font-medium text-dark-300 transition-all hover:border-dark-600 hover:bg-dark-700 hover:text-dark-200"
+                  >
+                    <EmailIcon className="h-3.5 w-3.5 text-dark-400" />
+                    <span>{t('auth.loginWithEmail')}</span>
+                    <ChevronDownIcon
+                      className={`h-3 w-3 text-dark-400 transition-transform duration-300 ${showEmailForm ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  <div className="h-px flex-1 bg-dark-700" />
+                </div>
 
-                    <form className="space-y-3" onSubmit={handleEmailSubmit}>
-                      {authMode === 'register' && (
-                        <div>
-                          <label htmlFor="firstName" className="label">
-                            {t('auth.firstName', 'First Name')}
-                          </label>
-                          <input
-                            id="firstName"
-                            name="firstName"
-                            type="text"
-                            autoComplete="given-name"
-                            className="input"
-                            placeholder={t('auth.firstNamePlaceholder', 'Your name (optional)')}
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                          />
-                        </div>
-                      )}
-
-                      <div>
-                        <label htmlFor="email" className="label">
-                          {t('auth.email')}
-                        </label>
-                        <input
-                          id="email"
-                          name="email"
-                          type="email"
-                          autoComplete="email"
-                          required
-                          className="input"
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="password" className="label">
-                          {t('auth.password')}
-                        </label>
-                        <input
-                          id="password"
-                          name="password"
-                          type="password"
-                          autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                          required
-                          className="input"
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                        />
-                        {authMode === 'register' && password.length > 0 && password.length < 8 && (
-                          <p className="mt-1.5 text-xs text-error-400">
-                            {t('auth.passwordTooShort', 'Password must be at least 8 characters')}
-                          </p>
-                        )}
-                      </div>
-
-                      {authMode === 'register' && (
-                        <div>
-                          <label htmlFor="confirmPassword" className="label">
-                            {t('auth.confirmPassword', 'Confirm Password')}
-                          </label>
-                          <input
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            type="password"
-                            autoComplete="new-password"
-                            required
-                            className="input"
-                            placeholder="••••••••"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                          />
-                        </div>
-                      )}
-
-                      {authMode === 'register' && (
-                        <label className="flex cursor-pointer items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={agreePersonalData}
-                            onChange={(e) => setAgreePersonalData(e.target.checked)}
-                            className="h-4 w-4 flex-shrink-0 cursor-pointer accent-accent-500"
-                          />
-                          <span className="text-xs text-dark-400">
-                            <Link
-                              to="/info?tab=personal-data"
-                              target="_blank"
-                              className="text-accent-400 underline underline-offset-2 transition-colors hover:text-accent-300"
-                              onClick={(e) => e.stopPropagation()}
+                {/* Collapsible email form */}
+                <div
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    showEmailForm ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                  }`}
+                  style={{ transform: 'translateZ(0)' }}
+                >
+                  <div className="overflow-hidden">
+                    <div className="space-y-4 pb-1 pt-1">
+                      {showForgotPassword ? (
+                        /* Forgot password screen - replaces login/register */
+                        forgotPasswordSent ? (
+                          <div className="space-y-4 text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-success-500/20">
+                              <EmailIcon className="h-6 w-6 text-success-400" />
+                            </div>
+                            <p className="text-sm font-medium text-dark-100">
+                              {t('auth.checkEmail', 'Check your email')}
+                            </p>
+                            <p className="text-xs text-dark-400">
+                              {t(
+                                'auth.passwordResetSent',
+                                'If an account exists with this email, we sent password reset instructions.',
+                              )}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={closeForgotPasswordModal}
+                              className="text-sm text-accent-400 transition-colors hover:text-accent-300"
                             >
-                              {t('info.personalData')}
-                            </Link>
-                            {' — '}
-                            {t('auth.agreeCheckbox', 'I agree')}
-                          </span>
-                        </label>
-                      )}
-
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="btn-primary w-full py-2.5"
-                      >
-                        {isLoading ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            {t('common.loading')}
-                          </span>
-                        ) : authMode === 'login' ? (
-                          t('auth.login')
+                              {t('common.back', 'Back')}
+                            </button>
+                          </div>
                         ) : (
-                          t('auth.register', 'Register')
-                        )}
-                      </button>
-                    </form>
+                          <div className="space-y-4">
+                            <p className="text-center text-sm text-dark-400">
+                              {t(
+                                'auth.forgotPasswordHint',
+                                'Enter your email and we will send you instructions to reset your password.',
+                              )}
+                            </p>
+                            <form onSubmit={handleForgotPassword} className="space-y-3">
+                              <div>
+                                <label htmlFor="forgotEmail" className="label">
+                                  Email
+                                </label>
+                                <input
+                                  id="forgotEmail"
+                                  type="email"
+                                  value={forgotPasswordEmail}
+                                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                                  placeholder="you@example.com"
+                                  className="input"
+                                  autoFocus
+                                />
+                              </div>
+                              {forgotPasswordError && (
+                                <p className="text-sm text-error-400">{forgotPasswordError}</p>
+                              )}
+                              <button
+                                type="submit"
+                                disabled={forgotPasswordLoading}
+                                className="btn-primary w-full py-2.5"
+                              >
+                                {forgotPasswordLoading ? (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                    {t('common.loading')}
+                                  </span>
+                                ) : (
+                                  t('auth.sendResetLink', 'Send reset link')
+                                )}
+                              </button>
+                            </form>
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={closeForgotPasswordModal}
+                                className="text-sm text-dark-400 transition-colors hover:text-dark-200"
+                              >
+                                {t('common.back', 'Back')}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        /* Normal login / register */
+                        <>
+                          <div className="flex rounded-lg bg-dark-800 p-1">
+                            <button
+                              type="button"
+                              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
+                                authMode === 'login'
+                                  ? 'bg-accent-500 text-on-accent'
+                                  : 'text-dark-400 hover:text-dark-200'
+                              }`}
+                              onClick={() => setAuthMode('login')}
+                            >
+                              {t('auth.login')}
+                            </button>
+                            <button
+                              type="button"
+                              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
+                                authMode === 'register'
+                                  ? 'bg-accent-500 text-on-accent'
+                                  : 'text-dark-400 hover:text-dark-200'
+                              }`}
+                              onClick={() => setAuthMode('register')}
+                            >
+                              {t('auth.register', 'Register')}
+                            </button>
+                          </div>
 
-                    {authMode === 'register' && (
-                      <p className="text-center text-xs text-dark-500">
-                        {t(
-                          'auth.verificationEmailNotice',
-                          'After registration, a verification email will be sent to your address',
-                        )}
-                      </p>
-                    )}
+                          <form className="space-y-3" onSubmit={handleEmailSubmit}>
+                            {authMode === 'register' && (
+                              <div>
+                                <label htmlFor="firstName" className="label">
+                                  {t('auth.firstName', 'First Name')}
+                                </label>
+                                <input
+                                  id="firstName"
+                                  name="firstName"
+                                  type="text"
+                                  autoComplete="given-name"
+                                  className="input"
+                                  placeholder={t(
+                                    'auth.firstNamePlaceholder',
+                                    'Your name (optional)',
+                                  )}
+                                  value={firstName}
+                                  onChange={(e) => setFirstName(e.target.value)}
+                                />
+                              </div>
+                            )}
 
-                    {authMode === 'login' && (
-                      <div className="text-center">
-                        <button
-                          type="button"
-                          onClick={() => setShowForgotPassword(true)}
-                          className="text-sm text-accent-400 transition-colors hover:text-accent-300"
-                        >
-                          {t('auth.forgotPassword', 'Forgot password?')}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                            <div>
+                              <label htmlFor="email" className="label">
+                                {t('auth.email')}
+                              </label>
+                              <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                autoComplete="email"
+                                required
+                                className="input"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                              />
+                            </div>
+
+                            <div>
+                              <label htmlFor="password" className="label">
+                                {t('auth.password')}
+                              </label>
+                              <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autoComplete={
+                                  authMode === 'login' ? 'current-password' : 'new-password'
+                                }
+                                required
+                                className="input"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                              />
+                              {authMode === 'register' &&
+                                password.length > 0 &&
+                                password.length < 8 && (
+                                  <p className="mt-1.5 text-xs text-error-400">
+                                    {t(
+                                      'auth.passwordTooShort',
+                                      'Password must be at least 8 characters',
+                                    )}
+                                  </p>
+                                )}
+                            </div>
+
+                            {authMode === 'register' && (
+                              <div>
+                                <label htmlFor="confirmPassword" className="label">
+                                  {t('auth.confirmPassword', 'Confirm Password')}
+                                </label>
+                                <input
+                                  id="confirmPassword"
+                                  name="confirmPassword"
+                                  type="password"
+                                  autoComplete="new-password"
+                                  required
+                                  className="input"
+                                  placeholder="••••••••"
+                                  value={confirmPassword}
+                                  onChange={(e) => setConfirmPassword(e.target.value)}
+                                />
+                              </div>
+                            )}
+
+                            {authMode === 'register' && (
+                              <LegalConsent
+                                documents={consentDocuments}
+                                accepted={acceptedDocuments}
+                                onChange={toggleDocument}
+                                disabled={isLoading}
+                                className="pt-1"
+                              />
+                            )}
+
+                            <button
+                              type="submit"
+                              disabled={
+                                isLoading || (authMode === 'register' && !allDocumentsAccepted)
+                              }
+                              className="btn-primary w-full py-2.5"
+                            >
+                              {isLoading ? (
+                                <span className="flex items-center justify-center gap-2">
+                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                  {t('common.loading')}
+                                </span>
+                              ) : authMode === 'login' ? (
+                                t('auth.login')
+                              ) : (
+                                t('auth.register', 'Register')
+                              )}
+                            </button>
+                          </form>
+
+                          {authMode === 'register' && (
+                            <p className="text-center text-xs text-dark-500">
+                              {t(
+                                'auth.verificationEmailNotice',
+                                'After registration, a verification email will be sent to your address',
+                              )}
+                            </p>
+                          )}
+
+                          {authMode === 'login' && (
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => setShowForgotPassword(true)}
+                                className="text-sm text-accent-400 transition-colors hover:text-accent-300"
+                              >
+                                {t('auth.forgotPassword', 'Forgot password?')}
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}
-      </div>
-      {/* Legal links footer */}
-      <div className="relative mt-6 flex w-full max-w-md flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-dark-500">
-        {import.meta.env.VITE_LEGAL_INFO && (
-          <span className="w-full text-center text-dark-600">
-            {import.meta.env.VITE_LEGAL_INFO}
-          </span>
-        )}
-        <Link to="/support" className="transition-colors hover:text-dark-300">
-          {t('nav.support')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=rules" className="transition-colors hover:text-dark-300">
-          {t('info.rules')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=privacy" className="transition-colors hover:text-dark-300">
-          {t('info.privacy')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=offer" className="transition-colors hover:text-dark-300">
-          {t('info.offer')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=personal-data" className="transition-colors hover:text-dark-300">
-          {t('info.personalData')}
-        </Link>
+        {footerEnabled && <LegalFooter className="pt-1" />}
       </div>
     </div>
   );

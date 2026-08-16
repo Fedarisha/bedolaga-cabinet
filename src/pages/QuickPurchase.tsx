@@ -7,6 +7,13 @@ import { fireAnalyticsEvent, getYandexCid } from '../hooks/useAnalyticsCounters'
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { landingApi } from '../api/landings';
+import {
+  brandingApi,
+  getCachedBranding,
+  setCachedBranding,
+  preloadLogo,
+  getLogoBlobUrl,
+} from '../api/branding';
 import type {
   LandingConfig,
   LandingTariff,
@@ -14,11 +21,16 @@ import type {
   LandingPaymentMethod,
   PurchaseRequest,
 } from '../api/landings';
-import { StaticBackgroundRenderer } from '../components/backgrounds/BackgroundRenderer';
+import {
+  BackgroundRenderer,
+  StaticBackgroundRenderer,
+} from '../components/backgrounds/BackgroundRenderer';
+import { CheckCircleIcon, CheckIcon, DevicesIcon, DownloadIcon } from '@/components/icons';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { cn } from '../lib/utils';
 import { getApiErrorMessage } from '../utils/api-error';
 import { formatPrice } from '../utils/format';
+import { setFavicon, letterFaviconDataUri, roundedFaviconDataUri } from '../utils/favicon';
 import { useCurrency } from '../hooks/useCurrency';
 
 function detectContactType(value: string): 'email' | 'telegram' {
@@ -35,22 +47,21 @@ function isValidContact(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
 }
 
-// Sentinel value used as period.days for the synthetic "Суточный" period
-// that represents all daily tariffs in the period selector.
+// Synthetic period used to group all daily tariffs in the period selector.
 const DAILY_DAYS_SENTINEL = -1;
-
-// Period (in days) selected by default on the landing: 12 months.
-// Falls back to the first available period when this one isn't offered.
 const DEFAULT_PERIOD_DAYS = 360;
+const DAILY_MIN_DAYS = 1;
+const DAILY_MAX_DAYS = 365;
 
 function formatPeriodLabel(
   days: number,
   t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
   if (days === DAILY_DAYS_SENTINEL) {
-    const res = t('landing.dailyLabel');
-    return res === 'landing.dailyLabel' ? 'Суточный' : res;
+    const result = t('landing.dailyLabel');
+    return result === 'landing.dailyLabel' ? 'Суточный' : result;
   }
+
   const key = `landing.periodLabels.d${days}`;
   const result = t(key);
   if (result !== key) return result;
@@ -62,9 +73,6 @@ function formatPeriodLabel(
   }
   return t('landing.periodLabels.nDays', { count: days });
 }
-
-const DAILY_MIN_DAYS = 1;
-const DAILY_MAX_DAYS = 365;
 
 function buildDailyPeriod(tariff: LandingTariff, days: number = 1): LandingTariffPeriod {
   const perDay = tariff.daily_price_kopeks ?? 0;
@@ -139,7 +147,7 @@ function PeriodTabs({
           className={cn(
             'whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200',
             selectedDays === period.days
-              ? 'bg-accent-500 text-white shadow-lg shadow-accent-500/25'
+              ? 'bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25'
               : 'bg-dark-800/50 text-dark-300 hover:bg-dark-700/50 hover:text-dark-100',
           )}
         >
@@ -150,13 +158,12 @@ function PeriodTabs({
   );
 }
 
-function DailyDaysPicker({ days, onChange }: { days: number; onChange: (v: number) => void }) {
+function DailyDaysPicker({ days, onChange }: { days: number; onChange: (value: number) => void }) {
   const { t } = useTranslation();
-  const clamp = (v: number) => Math.max(DAILY_MIN_DAYS, Math.min(DAILY_MAX_DAYS, v));
+  const clamp = (value: number) => Math.max(DAILY_MIN_DAYS, Math.min(DAILY_MAX_DAYS, value));
   const setFromInput = (raw: string) => {
-    const parsed = parseInt(raw.replace(/\D/g, ''), 10);
-    if (Number.isNaN(parsed)) return;
-    onChange(clamp(parsed));
+    const parsed = Number.parseInt(raw.replace(/\D/g, ''), 10);
+    if (!Number.isNaN(parsed)) onChange(clamp(parsed));
   };
 
   return (
@@ -178,7 +185,7 @@ function DailyDaysPicker({ days, onChange }: { days: number; onChange: (v: numbe
           type="text"
           inputMode="numeric"
           value={days}
-          onChange={(e) => setFromInput(e.target.value)}
+          onChange={(event) => setFromInput(event.target.value)}
           className="h-9 w-16 rounded-lg border border-dark-700/50 bg-dark-800/50 text-center text-sm font-semibold text-dark-50 outline-none focus:border-accent-500/50"
         />
         <button
@@ -200,7 +207,7 @@ function DailyDaysPicker({ days, onChange }: { days: number; onChange: (v: numbe
             className={cn(
               'rounded-full px-3 py-1 text-xs font-medium transition-colors',
               days === preset
-                ? 'bg-accent-500 text-white'
+                ? 'bg-accent-500 text-on-accent'
                 : 'bg-dark-800/50 text-dark-300 hover:bg-dark-700/50',
             )}
           >
@@ -376,54 +383,18 @@ function TariffCard({
             isSelected ? 'border-accent-500 bg-accent-500' : 'border-dark-600',
           )}
         >
-          {isSelected && (
-            <svg
-              className="h-3 w-3 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={3}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          )}
+          {isSelected && <CheckIcon className="h-3 w-3 text-white" />}
         </div>
       </div>
 
       {/* Info row */}
       <div className="flex items-center gap-3 text-xs text-dark-400">
         <span className="flex items-center gap-1">
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
-            />
-          </svg>
-          {tariff.traffic_limit_gb === 0
-            ? '∞'
-            : `${tariff.traffic_limit_gb} ${t('landing.gb', 'GB')} ${t('common.units.perMonthTraffic')}`}
+          <DownloadIcon className="h-3.5 w-3.5" />
+          {tariff.traffic_limit_gb === 0 ? '∞' : tariff.traffic_limit_gb} {t('landing.gb', 'GB')}
         </span>
         <span className="flex items-center gap-1">
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
-            />
-          </svg>
+          <DevicesIcon className="h-3.5 w-3.5" />
           {tariff.device_limit} {t('landing.devices', 'devices')}
         </span>
       </div>
@@ -449,19 +420,6 @@ function TariffCard({
                 </>
               )}
           </div>
-          {/* Per-month price (skip daily tariffs and the 1-month period) */}
-          {!tariff.is_daily &&
-            selectedPeriod.days > 30 &&
-            (() => {
-              const months = selectedPeriod.days / 30;
-              const perMonth = Math.round(selectedPeriod.price_kopeks / months);
-              return (
-                <div className="mt-0.5 text-xs text-dark-400">
-                  ≈ {formatPrice(perMonth)}
-                  {t('landing.perMonth', '/мес')}
-                </div>
-              );
-            })()}
         </div>
       )}
     </button>
@@ -537,7 +495,7 @@ function PaymentMethodCard({
                 className={cn(
                   'rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200',
                   selectedSubOption === opt.id
-                    ? 'bg-accent-500 text-white shadow-sm shadow-accent-500/25'
+                    ? 'bg-accent-500 text-on-accent shadow-sm shadow-accent-500/25'
                     : 'bg-dark-800/50 text-dark-300 hover:bg-dark-700/50 hover:text-dark-100',
                 )}
               >
@@ -661,15 +619,7 @@ function SummaryCard({
           {config.features.map((feature, idx) => (
             <div key={idx} className="flex gap-3">
               <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-500/10">
-                <svg
-                  className="h-3 w-3 text-success-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+                <CheckCircleIcon className="h-3 w-3 text-success-500" />
               </div>
               <div>
                 <p className="text-sm font-medium text-dark-100">{feature.title}</p>
@@ -711,9 +661,9 @@ function SummaryCard({
                   const el = document.getElementById('contact-input');
                   if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.classList.add('!border-red-500', '!ring-2', '!ring-red-500/50');
+                    el.classList.add('!border-error-500', '!ring-2', '!ring-error-500/50');
                     setTimeout(() => {
-                      el.classList.remove('!border-red-500', '!ring-2', '!ring-red-500/50');
+                      el.classList.remove('!border-error-500', '!ring-2', '!ring-error-500/50');
                     }, 2000);
                   }
                   return;
@@ -724,7 +674,7 @@ function SummaryCard({
               className={cn(
                 'flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200',
                 canSubmit && !isSubmitting
-                  ? 'bg-accent-500 text-white shadow-lg shadow-accent-500/25 hover:bg-accent-400 hover:shadow-accent-500/40 active:scale-[0.98]'
+                  ? 'bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25 hover:bg-accent-400 hover:shadow-accent-500/40 active:scale-[0.98]'
                   : 'cursor-not-allowed bg-dark-800 text-dark-500',
               )}
             >
@@ -754,12 +704,12 @@ function SummaryCard({
               const el = document.getElementById('contact-input');
               if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.add('!border-red-500', '!ring-2', '!ring-red-500/50');
+                el.classList.add('!border-error-500', '!ring-2', '!ring-error-500/50');
                 setTimeout(() => {
                   el.focus();
                 }, 300);
                 setTimeout(() => {
-                  el.classList.remove('!border-red-500', '!ring-2', '!ring-red-500/50');
+                  el.classList.remove('!border-error-500', '!ring-2', '!ring-error-500/50');
                 }, 2000);
               }
               return;
@@ -770,7 +720,7 @@ function SummaryCard({
           className={cn(
             'flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200',
             canSubmit && !isSubmitting
-              ? 'bg-accent-500 text-white shadow-lg shadow-accent-500/25 hover:bg-accent-400 hover:shadow-accent-500/40 active:scale-[0.98]'
+              ? 'bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25 hover:bg-accent-400 hover:shadow-accent-500/40 active:scale-[0.98]'
               : 'cursor-not-allowed bg-dark-800 text-dark-500',
           )}
         >
@@ -875,7 +825,7 @@ function DiscountBanner({
       <div className="flex flex-col items-center gap-4 px-5 py-5 sm:flex-row sm:justify-between">
         {/* Left: badge + text */}
         <div className="flex items-center gap-3">
-          <span className="shrink-0 rounded-full bg-accent-500 px-3 py-1 text-sm font-bold text-white shadow-lg shadow-accent-500/25">
+          <span className="shrink-0 rounded-full bg-accent-500 px-3 py-1 text-sm font-bold text-on-accent shadow-lg shadow-accent-500/25">
             -{discount.percent}%
           </span>
           {discount.badge_text && (
@@ -923,6 +873,42 @@ export default function QuickPurchase() {
     staleTime: 60_000,
     retry: 1,
   });
+
+  // Public branding — drives the favicon on this standalone landing page.
+  // The cabinet's useBranding hook is auth-gated and AppShell-only, so a public
+  // landing would otherwise keep the empty index.html favicon. The branding
+  // endpoint is public; logo is preloaded as a blob to keep the backend URL out
+  // of the DOM (same pattern as the authenticated app).
+  const { data: branding } = useQuery({
+    queryKey: ['branding'],
+    queryFn: async () => {
+      const data = await brandingApi.getBranding();
+      setCachedBranding(data);
+      await preloadLogo(data);
+      return data;
+    },
+    initialData: getCachedBranding() ?? undefined,
+    initialDataUpdatedAt: 0,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  useEffect(() => {
+    if (!branding) return;
+    const logoUrl = branding.has_custom_logo ? getLogoBlobUrl() : null;
+    if (!logoUrl) {
+      setFavicon(letterFaviconDataUri(branding.logo_letter));
+      return;
+    }
+    let cancelled = false;
+    // Round the custom logo like the header tile instead of a hard square.
+    roundedFaviconDataUri(logoUrl).then((rounded) => {
+      if (!cancelled) setFavicon(rounded || logoUrl);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [branding]);
 
   const [discountExpired, setDiscountExpired] = useState(false);
 
@@ -972,8 +958,7 @@ export default function QuickPurchase() {
   // Selection state
   const [selectedTariffId, setSelectedTariffId] = useState<number | null>(null);
   const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null);
-  // Number of days for daily tariff purchase (only used when "Суточный" selected).
-  const [dailyDays, setDailyDays] = useState<number>(30);
+  const [dailyDays, setDailyDays] = useState(30);
   const contactKey = `lp_contact_${slug ?? ''}`;
   const [contactValue, setContactValue] = useState(() => {
     try {
@@ -998,8 +983,7 @@ export default function QuickPurchase() {
     };
   }, []);
 
-  // Collect unique periods across all regular tariffs, prepending a synthetic
-  // "Суточный" entry (days=DAILY_DAYS_SENTINEL) when any daily tariff exists.
+  // Collect regular periods and prepend a synthetic daily entry when needed.
   const allPeriods = useMemo(() => {
     if (!config) return [];
     const hasDaily = config.tariffs.some((tariff) => tariff.is_daily);
@@ -1012,10 +996,10 @@ export default function QuickPurchase() {
         }
       }
     }
-    const regular = Array.from(periodMap.values()).sort((a, b) => a.days - b.days);
-    if (!hasDaily) return regular;
-    const dailyTariff = config.tariffs.find((t) => t.is_daily)!;
-    return [buildDailyPeriod(dailyTariff), ...regular];
+    const regularPeriods = Array.from(periodMap.values()).sort((a, b) => a.days - b.days);
+    if (!hasDaily) return regularPeriods;
+    const dailyTariff = config.tariffs.find((tariff) => tariff.is_daily)!;
+    return [buildDailyPeriod(dailyTariff), ...regularPeriods];
   }, [config]);
 
   // Filter tariffs to only those that have the selected period
@@ -1025,7 +1009,8 @@ export default function QuickPurchase() {
       return config.tariffs.filter((tariff) => tariff.is_daily);
     }
     return config.tariffs.filter(
-      (tariff) => !tariff.is_daily && tariff.periods.some((p) => p.days === selectedPeriodDays),
+      (tariff) =>
+        !tariff.is_daily && tariff.periods.some((period) => period.days === selectedPeriodDays),
     );
   }, [config, selectedPeriodDays]);
 
@@ -1033,10 +1018,10 @@ export default function QuickPurchase() {
   useEffect(() => {
     if (!config) return;
 
-    // Default to the 12-month period when available, otherwise the first one.
+    // Prefer the annual period, then fall back to the first available option.
     if (allPeriods.length > 0 && selectedPeriodDays === null) {
-      const preferred = allPeriods.find((p) => p.days === DEFAULT_PERIOD_DAYS);
-      setSelectedPeriodDays(preferred ? preferred.days : allPeriods[0].days);
+      const preferred = allPeriods.find((period) => period.days === DEFAULT_PERIOD_DAYS);
+      setSelectedPeriodDays(preferred?.days ?? allPeriods[0].days);
     }
 
     // Auto-select first visible tariff
@@ -1064,15 +1049,18 @@ export default function QuickPurchase() {
     }
   }, [visibleTariffs, selectedTariffId]);
 
-  // SEO: set document title
+  // SEO: set document title. Fall back to the landing's own title when no
+  // dedicated meta_title is set — otherwise the tab keeps the static
+  // index.html "VPN" placeholder and never reflects the landing.
   useEffect(() => {
-    if (!config?.meta_title) return;
+    const pageTitle = config?.meta_title || config?.title;
+    if (!pageTitle) return;
     const prev = document.title;
-    document.title = config.meta_title;
+    document.title = pageTitle;
     return () => {
       document.title = prev;
     };
-  }, [config?.meta_title]);
+  }, [config?.meta_title, config?.title]);
 
   // SEO: set meta description
   useEffect(() => {
@@ -1129,10 +1117,8 @@ export default function QuickPurchase() {
 
   const selectedPeriod = useMemo(() => {
     if (!selectedTariff) return undefined;
-    if (selectedTariff.is_daily) {
-      return buildDailyPeriod(selectedTariff, dailyDays);
-    }
-    return selectedTariff.periods.find((p) => p.days === selectedPeriodDays);
+    if (selectedTariff.is_daily) return buildDailyPeriod(selectedTariff, dailyDays);
+    return selectedTariff.periods.find((period) => period.days === selectedPeriodDays);
   }, [selectedTariff, selectedPeriodDays, dailyDays]);
 
   const currentPrice = selectedPeriod?.price_kopeks ?? 0;
@@ -1179,8 +1165,6 @@ export default function QuickPurchase() {
       paymentMethod = `${paymentMethod}_${selectedSubOption}`;
     }
 
-    // Daily tariff: user chooses how many days to prepay; subsequent days
-    // after expiry are auto-charged from balance by the daily cron.
     const periodDaysToSend =
       selectedTariff?.is_daily || selectedPeriodDays === DAILY_DAYS_SENTINEL
         ? dailyDays
@@ -1243,8 +1227,16 @@ export default function QuickPurchase() {
   const showTariffCards = visibleTariffs.length > 1;
 
   return (
-    <div className={cn('min-h-dvh overflow-x-hidden', !config.background_config && 'bg-dark-950')}>
-      {config.background_config && <StaticBackgroundRenderer config={config.background_config} />}
+    <div className="min-h-dvh overflow-x-hidden">
+      {/* Background: the landing's own per-landing theme when configured, else
+          fall back to the cabinet's global animated theme (instead of a bare
+          dark canvas). Both render via a portal behind the content, so the
+          wrapper stays transparent over the body's #0a0f1a. */}
+      {config.background_config ? (
+        <StaticBackgroundRenderer config={config.background_config} />
+      ) : (
+        <BackgroundRenderer />
+      )}
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Language switcher */}
         <div className="mb-4 flex justify-end">
@@ -1336,7 +1328,9 @@ export default function QuickPurchase() {
                   className="grid gap-3 sm:grid-cols-2"
                 >
                   {visibleTariffs.map((tariff) => {
-                    const period = tariff.periods.find((p) => p.days === selectedPeriodDays);
+                    const period = tariff.is_daily
+                      ? buildDailyPeriod(tariff, dailyDays)
+                      : tariff.periods.find((item) => item.days === selectedPeriodDays);
                     return (
                       <TariffCard
                         key={tariff.id}

@@ -31,6 +31,11 @@ export default defineConfig(({ mode }) => {
           // Strip /api prefix: /api/cabinet/auth -> /cabinet/auth
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
+        '/health': {
+          target: env.DEV_API_TARGET || 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
     build: {
@@ -60,6 +65,8 @@ export default defineConfig(({ mode }) => {
             if (id.includes('twemoji') || id.includes('@twemoji/')) return 'vendor-twemoji';
             if (id.includes('/jsencrypt/') || id.includes('@kastov/')) return 'vendor-crypto';
             if (id.includes('@lottiefiles/')) return 'vendor-lottie';
+            if (id.includes('/recharts/') || id.includes('/d3-')) return 'vendor-recharts';
+            if (id.includes('@tiptap/') || id.includes('/prosemirror-')) return 'vendor-tiptap';
             if (
               id.includes('/axios/') ||
               id.includes('/zustand/') ||

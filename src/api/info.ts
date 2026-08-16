@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { SupportConfig } from '../types';
+import type { LegalConsentConfig, SupportConfig } from '../types';
 
 export interface FaqPage {
   id: number;
@@ -28,6 +28,11 @@ export interface PersonalDataConsentResponse {
   updated_at: string | null;
 }
 
+export interface RecurrentPaymentsResponse {
+  content: string;
+  updated_at: string | null;
+}
+
 export interface ServiceInfo {
   name: string;
   description: string | null;
@@ -40,6 +45,14 @@ export interface LanguageInfo {
   code: string;
   name: string;
   flag: string;
+}
+
+export interface InfoVisibility {
+  faq: boolean;
+  rules: boolean;
+  privacy: boolean;
+  offer: boolean;
+  recurrent: boolean;
 }
 
 export const infoApi = {
@@ -73,10 +86,18 @@ export const infoApi = {
     return response.data;
   },
 
-  // Get personal data consent
+  // Get personal data processing consent
   getPersonalDataConsent: async (): Promise<PersonalDataConsentResponse> => {
     const response = await apiClient.get<PersonalDataConsentResponse>(
       '/cabinet/info/personal-data-consent',
+    );
+    return response.data;
+  },
+
+  // Get recurring-payments document
+  getRecurrentPayments: async (): Promise<RecurrentPaymentsResponse> => {
+    const response = await apiClient.get<RecurrentPaymentsResponse>(
+      '/cabinet/info/recurrent-payments',
     );
     return response.data;
   },
@@ -110,6 +131,19 @@ export const infoApi = {
   // Get support configuration
   getSupportConfig: async (): Promise<SupportConfig> => {
     const response = await apiClient.get<SupportConfig>('/cabinet/info/support-config');
+    return response.data;
+  },
+
+  getVisibility: async (): Promise<InfoVisibility> => {
+    const response = await apiClient.get<InfoVisibility>('/cabinet/info/visibility');
+    return response.data;
+  },
+
+  // Публичный: экран логина запрашивает это ДО авторизации.
+  getLegalConsentConfig: async (language?: string): Promise<LegalConsentConfig> => {
+    const response = await apiClient.get<LegalConsentConfig>('/cabinet/info/legal-consent', {
+      params: language ? { language } : undefined,
+    });
     return response.data;
   },
 };
