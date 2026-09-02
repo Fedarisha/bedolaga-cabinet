@@ -17,7 +17,8 @@ import {
 } from '../api/branding';
 import { useLogoBlobUrl } from '../hooks/useLogoBlobUrl';
 import { getAndClearReturnUrl } from '../utils/token';
-import { useTelegramSDK } from '../hooks/useTelegramSDK';
+import { getApiErrorMessage } from '../utils/api-error';
+import { getTelegramInitData, isInTelegramWebApp, useTelegramSDK } from '../hooks/useTelegramSDK';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import OAuthProviderIcon from '../components/OAuthProviderIcon';
 import { saveOAuthState } from '../utils/oauth';
@@ -37,10 +38,18 @@ export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, loginWithEmail, registerWithEmail } = useAuthStore(
+  const {
+    isAuthenticated,
+    isAuthInitializing,
+    loginWithEmail,
+    loginWithTelegram,
+    registerWithEmail,
+  } = useAuthStore(
     useShallow((state) => ({
       isAuthenticated: state.isAuthenticated,
+      isAuthInitializing: state.isLoading,
       loginWithEmail: state.loginWithEmail,
+      loginWithTelegram: state.loginWithTelegram,
       registerWithEmail: state.registerWithEmail,
     })),
   );
@@ -68,6 +77,10 @@ export default function Login() {
   const [isLegacyRecoveryOpen, setIsLegacyRecoveryOpen] = useState(false);
   const [openAccountsAfterLogin, setOpenAccountsAfterLogin] = useState(false);
   const isManualLoginRedirectRef = useRef(false);
+  // Автовход Mini App выполняется — форму входа в это время показывать нельзя,
+  // иначе пользователь на долю секунды видит Яндекс/VK и успевает нажать.
+  const [telegramAuthPending, setTelegramAuthPending] = useState(false);
+  const telegramAuthStartedRef = useRef(false);
 
   // Telegram safe area insets
   const { safeAreaInset, contentSafeAreaInset } = useTelegramSDK();
@@ -173,6 +186,59 @@ export default function Login() {
       navigate(getReturnUrl(), { replace: true });
     }
   }, [isAuthenticated, navigate, getReturnUrl]);
+
+  // Автовход в Telegram Mini App по initData.
+  //
+  // Кнопки бота открывают кабинет на обычных маршрутах (корень, /balance,
+  // /subscription…), а ProtectedRoute уводит неавторизованного сюда. Без этого
+  // эффекта у пользователя БЕЗ сохранённой сессии вход в Mini App невозможен
+  // вообще: initialize() умеет только восстановить старую сессию, а OAuth
+  // (Яндекс/VK) внутри WebView не доводится до конца — state лежит в
+  // sessionStorage, а провайдер открывается вне вебвью, и OAuthCallback
+  // сваливается в ветку привязки аккаунта вместо логина.
+  //
+  // Вне Telegram эффект не срабатывает (нет initData), поэтому на сайте
+  // остаётся прежняя форма: Яндекс/VK/почта.
+  useEffect(() => {
+    // Ждём окончания bootstrap: иначе гонка со сбросом протухших токенов.
+    if (isAuthInitializing) return;
+    if (telegramAuthStartedRef.current) return;
+
+    const initData = getTelegramInitData();
+    if (!isInTelegramWebApp() || !initData) return;
+
+    telegramAuthStartedRef.current = true;
+    setTelegramAuthPending(true);
+
+    const tryTelegramAuth = async () => {
+      // Одна повторная попытка: сразу после запуска Mini App бэкенд иногда
+      // отвечает 401 на ещё не осевшую сессию.
+      const MAX_RETRIES = 1;
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          // Редирект делаем сами — иначе эффект выше повторно вызовет
+          // getReturnUrl(), а тот одноразовый и вернёт уже '/'.
+          isManualLoginRedirectRef.current = true;
+          await loginWithTelegram(initData);
+          navigate(getReturnUrl(), { replace: true });
+          return;
+        } catch (err) {
+          isManualLoginRedirectRef.current = false;
+          const status = (err as { response?: { status?: number } }).response?.status;
+          if (status === 401 && attempt < MAX_RETRIES) {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            continue;
+          }
+          setError(getApiErrorMessage(err, '') || t('auth.telegramRequired'));
+        }
+      }
+      // Не получилось — показываем обычную форму с текстом ошибки сверху,
+      // чтобы у пользователя остался запасной вход.
+      setTelegramAuthPending(false);
+    };
+
+    void tryTelegramAuth();
+  }, [isAuthInitializing, loginWithTelegram, navigate, getReturnUrl, t]);
 
   const handleLegacyRecoveryOpenToggle = () => {
     const shouldOpen = !isLegacyRecoveryOpen;
@@ -298,6 +364,20 @@ export default function Login() {
     setForgotPasswordSent(false);
     setForgotPasswordError('');
   };
+
+  // Идёт автовход по initData — форму входа не показываем.
+  if (telegramAuthPending) {
+    return (
+      <div className="min-h-viewport flex items-center justify-center px-4">
+        <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
+        <div className="relative text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+          <h2 className="text-lg font-semibold text-dark-50">{appName}</h2>
+          <p className="mt-2 text-sm text-dark-400">{t('auth.authenticating')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
