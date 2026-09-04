@@ -1,0 +1,199 @@
+/*
+ * Public landing (salfetka5.com/home) — styles that Tailwind utilities can't
+ * express well: the relay diagram animation, the "sheet" chip, scroll reveals.
+ * Everything is scoped under .fed-landing so nothing leaks into the cabinet.
+ */
+
+.fed-landing {
+  /* Paper sheet + ink: lifted from the logo (napkin with a navy "5"). */
+  --fed-paper: 241 246 253;
+  --fed-ink: 30 58 110;
+  /* Marigold from the logo's stream — used only to mark the reply direction. */
+  --fed-warm: 245 166 35;
+}
+
+.light .fed-landing {
+  --fed-paper: 255 255 255;
+}
+
+/* ---------- hero backdrop: a faint grid of "objects" ---------- */
+.fed-grid {
+  background-image: radial-gradient(rgb(var(--color-dark-600) / 0.55) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 55% at 50% 70%, #000 15%, transparent 75%);
+  mask-image: radial-gradient(ellipse 75% 55% at 50% 70%, #000 15%, transparent 75%);
+}
+
+/* ---------- sheet chip (one frame of traffic = one file) ---------- */
+.fed-sheet {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px 0 9px;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: rgb(var(--fed-ink));
+  background: rgb(var(--fed-paper));
+  border-radius: 3px 0 3px 3px;
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.35);
+  white-space: nowrap;
+}
+
+/* folded corner */
+.fed-sheet::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  background: linear-gradient(225deg, transparent 50%, rgb(var(--fed-ink) / 0.28) 50%);
+}
+
+/* direction stripe: client → server is accent, server → client is marigold */
+.fed-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgb(var(--color-accent-500));
+}
+
+.fed-sheet--reply::before {
+  background: rgb(var(--fed-warm));
+}
+
+/* ---------- relay diagram ---------- */
+.fed-relay {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 6px;
+}
+
+.fed-relay-lane {
+  position: relative;
+  height: 76px;
+}
+
+.fed-relay-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 22px;
+}
+
+.fed-relay-track--up {
+  top: 6px;
+}
+
+.fed-relay-track--down {
+  bottom: 6px;
+}
+
+.fed-relay-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px dashed rgb(var(--color-dark-600) / 0.9);
+}
+
+.fed-relay-track .fed-sheet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  animation: fed-fly-right var(--fed-dur, 5.2s) linear infinite;
+  animation-delay: var(--fed-delay, 0s);
+  will-change: left, transform, opacity;
+}
+
+.fed-relay-track--down .fed-sheet {
+  animation-name: fed-fly-left;
+}
+
+@keyframes fed-fly-right {
+  0% {
+    left: 0;
+    transform: translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fed-fly-left {
+  0% {
+    left: 100%;
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 0;
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+
+/* Narrow screens: lanes are ~60px wide, so sheets lose their label. */
+@media (max-width: 479px) {
+  .fed-relay-track .fed-sheet {
+    height: 16px;
+    width: 18px;
+    padding: 0;
+  }
+
+  .fed-relay-track .fed-sheet > span {
+    display: none;
+  }
+}
+
+/* ---------- reduced motion: freeze the diagram in a readable state ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .fed-relay-track .fed-sheet {
+    animation: none;
+    opacity: 1;
+    left: var(--fed-static, 40%);
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- FAQ (native <details>) ---------- */
+.fed-faq summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.fed-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.fed-faq-caret {
+  transition: transform 0.25s ease;
+}
+
+.fed-faq[open] .fed-faq-caret {
+  transform: rotate(180deg);
+}
