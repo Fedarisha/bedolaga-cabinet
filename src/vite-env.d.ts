@@ -8,11 +8,6 @@ interface ImportMetaEnv {
   readonly VITE_APP_NAME?: string;
   readonly VITE_APP_LOGO?: string;
   readonly VITE_LEGAL_INFO?: string;
-  /** Public contact email shown on the landing (hidden when empty). */
-  readonly VITE_CONTACT_EMAIL?: string;
-  /** Landing / cabinet host split — see useHostGuard. */
-  readonly VITE_CABINET_HOST?: string;
-  readonly VITE_PUBLIC_HOST?: string;
   /** Optional override for the backend liveness URL (defaults to `<origin>/health/unified`). */
   readonly VITE_HEALTH_URL?: string;
 }

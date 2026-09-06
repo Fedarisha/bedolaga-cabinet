@@ -35,9 +35,8 @@ export function useBranding() {
   const hasCustomLogo = branding?.has_custom_logo || false;
   const logoUrl = useLogoBlobUrl();
 
-  // Set document title. The public landing (/home) owns its own title.
+  // Set document title
   useEffect(() => {
-    if (window.location.pathname === '/home') return;
     document.title = appName || 'VPN';
   }, [appName]);
 
