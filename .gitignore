@@ -1,4 +1,5 @@
 # Dependencies
+node_modules
 node_modules/
 
 # Claude and codex local settings
@@ -60,3 +61,6 @@ ds-bundle/
 PRODUCT.md
 DESIGN.md
 DESIGN.json
+
+# Локальные архивы исходников — не для репозитория
+*.zip

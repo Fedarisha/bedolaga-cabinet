@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getApiErrorMessage } from '../utils/api-error';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -112,7 +113,7 @@ export default function Subscriptions() {
       refreshUser();
     },
     onError: (error: { response?: { data?: { detail?: string } } }) => {
-      setTrialError(error.response?.data?.detail || t('common.error'));
+      setTrialError(getApiErrorMessage(error, t('common.error')));
     },
   });
 

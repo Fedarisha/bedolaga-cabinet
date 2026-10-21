@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/auth';
 import { useShallow } from 'zustand/shallow';
 import { consumeCampaignSlug, getPendingCampaignSlug } from '../utils/campaign';
 import { tokenStorage } from '../utils/token';
+import { getApiErrorMessage } from '../utils/api-error';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import {
   LEGACY_AUTH_RECOVERY_RETURN_URL,
@@ -64,8 +65,7 @@ export default function VerifyEmail() {
         redirectTimer = setTimeout(() => navigate(returnUrl, { replace: true }), 1500);
       } catch (err: unknown) {
         setStatus('error');
-        const error = err as { response?: { data?: { detail?: string } } };
-        setError(error.response?.data?.detail || t('emailVerification.failed'));
+        setError(getApiErrorMessage(err, t('emailVerification.failed')));
       }
     };
 

@@ -18,6 +18,8 @@ import {
   BroadcastStatusBadge,
 } from '../components/broadcasts/BroadcastDeliveryStats';
 import { broadcastPollInterval } from '../utils/broadcastStatus';
+import { getApiErrorMessage } from '../utils/api-error';
+import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 import {
   SendIcon,
   CheckIcon,
@@ -154,10 +156,9 @@ export default function AdminPromoOfferSend() {
       });
     },
     onError: (error: unknown) => {
-      const axiosErr = error as { response?: { data?: { detail?: string } } };
       setResult({
         title: t('common.error'),
-        message: axiosErr.response?.data?.detail || t('admin.promoOffers.result.sendError'),
+        message: getApiErrorMessage(error, t('admin.promoOffers.result.sendError')),
         isSuccess: false,
       });
     },
@@ -202,9 +203,14 @@ export default function AdminPromoOfferSend() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-      </div>
+      <PageSkeleton
+        variant="admin"
+        leading={2}
+        titleWidth="w-56"
+        className="mx-auto max-w-2xl space-y-6"
+      >
+        <Skeleton variant="card" className="h-96" />
+      </PageSkeleton>
     );
   }
 
@@ -317,7 +323,7 @@ export default function AdminPromoOfferSend() {
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{getOfferTypeIcon(template.offer_type)}</span>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <div className="font-medium text-dark-100">{template.name}</div>
                       <div className="text-sm text-dark-400">
                         {template.discount_percent > 0 &&

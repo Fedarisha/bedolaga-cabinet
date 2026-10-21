@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { brandingApi, setCachedBranding } from '../../api/branding';
 import { useLogoBlobUrl } from '../../hooks/useLogoBlobUrl';
 import { setCachedFullscreenEnabled } from '../../hooks/useTelegramSDK';
+import { LITE_MODE_QUERY_KEY, writeLiteModeHint } from '../../hooks/useLiteMode';
 import { UploadIcon, TrashIcon, PencilIcon, CheckIcon, CloseIcon } from './icons';
 import { Toggle } from './Toggle';
 import { BackgroundEditor } from './BackgroundEditor';
@@ -37,6 +38,11 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
   const { data: fullscreenSettings } = useQuery({
     queryKey: ['fullscreen-enabled'],
     queryFn: brandingApi.getFullscreenEnabled,
+  });
+
+  const { data: liteModeSettings } = useQuery({
+    queryKey: LITE_MODE_QUERY_KEY,
+    queryFn: brandingApi.getLiteModeEnabled,
   });
 
   const { data: emailAuthSettings } = useQuery({
@@ -85,6 +91,16 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
     onSuccess: (data) => {
       setCachedFullscreenEnabled(data.enabled);
       queryClient.invalidateQueries({ queryKey: ['fullscreen-enabled'] });
+    },
+  });
+
+  const updateLiteModeMutation = useMutation({
+    mutationFn: (enabled: boolean) => brandingApi.updateLiteModeEnabled(enabled),
+    onSuccess: (data) => {
+      // Подсказку переписываем сразу: иначе админ, переключив режим, увидит
+      // прежний экран до следующего ответа сервера и решит, что не сработало.
+      writeLiteModeHint(data.enabled);
+      queryClient.invalidateQueries({ queryKey: LITE_MODE_QUERY_KEY });
     },
   });
 
@@ -190,8 +206,9 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
             </div>
           </div>
 
-          {/* Name */}
-          <div className="flex-1">
+          {/* Name. min-w-0: без него колонка росла по полю ввода, и кнопки ✓/✕
+              уезжали за экран. */}
+          <div className="min-w-0 flex-1">
             <label className="mb-2 block text-sm font-medium text-dark-300">
               {t('admin.settings.projectName')}
             </label>
@@ -201,19 +218,19 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="flex-1 rounded-xl border border-dark-600 bg-dark-700 px-4 py-2 text-dark-100 focus:border-accent-500 focus:outline-none"
+                  className="min-w-0 flex-1 rounded-xl border border-dark-600 bg-dark-700 px-4 py-2 text-dark-100 focus:border-accent-500 focus:outline-none"
                   maxLength={50}
                 />
                 <button
                   onClick={() => updateBrandingMutation.mutate(newName)}
                   disabled={updateBrandingMutation.isPending}
-                  className="rounded-xl bg-accent-500 px-4 py-2 text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+                  className="shrink-0 rounded-xl bg-accent-500 px-4 py-2 text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
                 >
                   <CheckIcon />
                 </button>
                 <button
                   onClick={() => setEditingName(false)}
-                  className="rounded-xl bg-dark-700 px-4 py-2 text-dark-300 transition-colors hover:bg-dark-600"
+                  className="shrink-0 rounded-xl bg-dark-700 px-4 py-2 text-dark-300 transition-colors hover:bg-dark-600"
                 >
                   <CloseIcon />
                 </button>
@@ -301,6 +318,18 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
         </h3>
 
         <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-4">
+            <div>
+              <span className="font-medium text-dark-100">{t('admin.settings.liteMode')}</span>
+              <p className="text-sm text-dark-400">{t('admin.settings.liteModeDesc')}</p>
+            </div>
+            <Toggle
+              checked={liteModeSettings?.enabled ?? false}
+              onChange={() => updateLiteModeMutation.mutate(!(liteModeSettings?.enabled ?? false))}
+              disabled={updateLiteModeMutation.isPending}
+            />
+          </div>
+
           <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-4">
             <div>
               <span className="font-medium text-dark-100">

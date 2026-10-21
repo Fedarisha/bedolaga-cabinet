@@ -1,4 +1,6 @@
+import { safeLocal } from '@/utils/safeStorage';
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { getApiErrorMessage } from '../utils/api-error';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -232,7 +234,7 @@ export default function Dashboard() {
       refreshUser();
     },
     onError: (error: { response?: { data?: { detail?: string } } }) => {
-      setTrialError(error.response?.data?.detail || t('common.error'));
+      setTrialError(getApiErrorMessage(error, t('common.error')));
     },
   });
 
@@ -252,7 +254,7 @@ export default function Dashboard() {
         traffic_used_percent: data.traffic_used_percent,
         is_unlimited: data.is_unlimited,
       });
-      localStorage.setItem(
+      safeLocal.setItem(
         `traffic_refresh_ts_${subscription?.id ?? 'default'}`,
         Date.now().toString(),
       );
@@ -290,7 +292,7 @@ export default function Dashboard() {
     if (hasAutoRefreshed.current) return;
     hasAutoRefreshed.current = true;
 
-    const lastRefresh = localStorage.getItem(`traffic_refresh_ts_${subscription?.id ?? 'default'}`);
+    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${subscription?.id ?? 'default'}`);
     const now = Date.now();
     const cacheMs = API.TRAFFIC_CACHE_MS;
 

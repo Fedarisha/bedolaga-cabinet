@@ -35,10 +35,7 @@ export function useBranding() {
   const hasCustomLogo = branding?.has_custom_logo || false;
   const logoUrl = useLogoBlobUrl();
 
-  // Set document title
-  useEffect(() => {
-    document.title = appName || 'VPN';
-  }, [appName]);
+  // Заголовок, фавикон и метатеги ведёт useDocumentBranding на уровне приложения.
 
   // Fullscreen setting from server
   const { data: fullscreenSetting } = useQuery({

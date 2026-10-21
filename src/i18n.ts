@@ -20,8 +20,6 @@ i18n.use(initReactI18next).init({
   react: {
     useSuspense: false,
   },
-
-  showSupportNotice: false,
 });
 
 document.documentElement.lang = FALLBACK_LNG;

@@ -389,6 +389,69 @@ export default function PaymentMethodIcon({
       );
     }
 
+    case 'cashera': {
+      const casheraGradId = `${uid}-cashera`;
+      return (
+        <svg className={className} viewBox="0 0 40 40">
+          <defs>
+            <linearGradient id={casheraGradId} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#10b981" />
+              <stop offset="100%" stopColor="#0f766e" />
+            </linearGradient>
+          </defs>
+          <circle cx="20" cy="20" r="20" fill={`url(#${casheraGradId})`} />
+          <path
+            d="M25.5 14.2a8 8 0 1 0 0 11.6"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <circle cx="27.5" cy="20" r="2" fill="#fde68a" />
+        </svg>
+      );
+    }
+
+    case 'tabpay': {
+      const tabpayGradId = `${uid}-tabpay`;
+      return (
+        <svg className={className} viewBox="0 0 40 40">
+          <defs>
+            <linearGradient id={tabpayGradId} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#0891b2" />
+              <stop offset="100%" stopColor="#4338ca" />
+            </linearGradient>
+          </defs>
+          <circle cx="20" cy="20" r="20" fill={`url(#${tabpayGradId})`} />
+          <g fill="#fff" fontFamily="Arial,sans-serif" fontWeight="700">
+            <text x="20" y="26" textAnchor="middle" fontSize="14">
+              TP
+            </text>
+          </g>
+        </svg>
+      );
+    }
+
+    case 'paritypay': {
+      const paritypayGradId = `${uid}-paritypay`;
+      return (
+        <svg className={className} viewBox="0 0 40 40">
+          <defs>
+            <linearGradient id={paritypayGradId} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#7c3aed" />
+              <stop offset="100%" stopColor="#a21caf" />
+            </linearGradient>
+          </defs>
+          <circle cx="20" cy="20" r="20" fill={`url(#${paritypayGradId})`} />
+          <g fill="#fff" fontFamily="Arial,sans-serif" fontWeight="700">
+            <text x="20" y="26" textAnchor="middle" fontSize="14">
+              PP
+            </text>
+          </g>
+        </svg>
+      );
+    }
+
     case 'donut': {
       const donutBgGradId = `${uid}-donut-bg`;
       const donutGlazeGradId = `${uid}-donut-glaze`;

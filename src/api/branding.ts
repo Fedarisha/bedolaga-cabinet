@@ -20,6 +20,11 @@ export interface FullscreenEnabled {
   enabled: boolean;
 }
 
+/** Простой вид кабинета: один экран покупателя вместо «Главное» + «Подписка». */
+export interface LiteModeEnabled {
+  enabled: boolean;
+}
+
 export interface EmailAuthEnabled {
   enabled: boolean;
   verification_enabled?: boolean;
@@ -64,6 +69,8 @@ const STATIC_LOGO_URL = '/vpn_logo.png';
 // This is only valid for the current page lifetime — it's reset on reload,
 // so readiness must be derived from the in-memory value, not from storage.
 let _logoBlobUrl: string | null = null;
+// Идущая сейчас загрузка: параллельные вызовы preloadLogo делят её.
+let _logoInFlight: Promise<void> | null = null;
 
 type BlobListener = () => void;
 const blobListeners = new Set<BlobListener>();
@@ -111,7 +118,33 @@ export const setCachedBranding = (branding: BrandingInfo) => {
   } catch {}
 };
 
-// Preload logo image as blob to hide backend URL
+/**
+ * Логотип с API, с самолечением кеша браузера.
+ *
+ * Тот же URL браузер мог уже запросить без заголовка Origin — как фавикон или
+ * <img> (старые сборки кабинета так и делали). Ответ без CORS-заголовков ложится
+ * в кеш, и обычный fetch() получает из кеша копию без Access-Control-Allow-Origin:
+ * это выглядит как CORS-ошибка, хотя сервер отвечает правильно. Повтор в режиме
+ * reload идёт мимо кеша и перезаписывает отравленную запись.
+ */
+async function fetchLogo(url: string): Promise<Response> {
+  try {
+    return await fetch(url);
+  } catch {
+    return fetch(url, { cache: 'reload' });
+  }
+}
+
+/**
+ * Логотип одним blob-адресом на страницу.
+ *
+ * Его просят одновременно запрос брендинга и сборка иконок вкладки. Раньше
+ * каждый вызов делал свой fetch, а закончивший вторым отзывал blob-адрес
+ * первого — под <img> шапки или под canvas фавикона: картинка не грузилась,
+ * вкладка получала монограмму вместо логотипа, и она же уходила в подсказку
+ * следующего визита. Теперь параллельные вызовы делят одну загрузку, а готовый
+ * blob-адрес никто не отзывает, пока логотип не сменили в админке.
+ */
 export const preloadLogo = async (branding: BrandingInfo): Promise<void> => {
   if (!branding.has_custom_logo || !branding.logo_url) {
     return;
@@ -120,10 +153,18 @@ export const preloadLogo = async (branding: BrandingInfo): Promise<void> => {
   if (_logoBlobUrl) {
     return;
   }
+  if (!_logoInFlight) {
+    _logoInFlight = loadLogoBlob(branding.logo_url).finally(() => {
+      _logoInFlight = null;
+    });
+  }
+  return _logoInFlight;
+};
 
+async function loadLogoBlob(logoPath: string): Promise<void> {
   try {
-    const logoUrl = `${import.meta.env.VITE_API_URL || ''}${branding.logo_url}`;
-    const response = await fetch(logoUrl);
+    const logoUrl = `${import.meta.env.VITE_API_URL || ''}${logoPath}`;
+    const response = await fetchLogo(logoUrl);
     if (!response.ok) return;
 
     const blob = await response.blob();
@@ -132,7 +173,7 @@ export const preloadLogo = async (branding: BrandingInfo): Promise<void> => {
   } catch {
     // Fetch failed, logo will use letter fallback
   }
-};
+}
 
 // Get the blob URL for the logo (safe, doesn't expose backend)
 export const getLogoBlobUrl = (): string | null => _logoBlobUrl || STATIC_LOGO_URL;
@@ -258,6 +299,25 @@ export const brandingApi = {
   // Update fullscreen enabled (admin only)
   updateFullscreenEnabled: async (enabled: boolean): Promise<FullscreenEnabled> => {
     const response = await apiClient.patch<FullscreenEnabled>('/cabinet/branding/fullscreen', {
+      enabled,
+    });
+    return response.data;
+  },
+
+  // Get lite mode enabled (public, no auth required)
+  getLiteModeEnabled: async (): Promise<LiteModeEnabled> => {
+    try {
+      const response = await apiClient.get<LiteModeEnabled>('/cabinet/branding/lite-mode');
+      return response.data;
+    } catch {
+      // Панель старее фронта — простого вида там ещё нет, значит он выключен.
+      return { enabled: false };
+    }
+  },
+
+  // Update lite mode enabled (admin only)
+  updateLiteModeEnabled: async (enabled: boolean): Promise<LiteModeEnabled> => {
+    const response = await apiClient.patch<LiteModeEnabled>('/cabinet/branding/lite-mode', {
       enabled,
     });
     return response.data;

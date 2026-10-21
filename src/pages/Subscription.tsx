@@ -1,3 +1,4 @@
+import { safeLocal } from '@/utils/safeStorage';
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -572,10 +573,7 @@ export default function Subscription() {
         traffic_used_percent: data.traffic_used_percent,
         is_unlimited: data.is_unlimited,
       });
-      localStorage.setItem(
-        `traffic_refresh_ts_${subscriptionId ?? 'default'}`,
-        Date.now().toString(),
-      );
+      safeLocal.setItem(`traffic_refresh_ts_${subscriptionId ?? 'default'}`, Date.now().toString());
       if (data.rate_limited && data.retry_after_seconds) {
         setTrafficRefreshCooldown(data.retry_after_seconds);
       } else {
@@ -611,7 +609,7 @@ export default function Subscription() {
     if (hasAutoRefreshed.current) return;
     hasAutoRefreshed.current = true;
 
-    const lastRefresh = localStorage.getItem(`traffic_refresh_ts_${subscriptionId ?? 'default'}`);
+    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${subscriptionId ?? 'default'}`);
     const now = Date.now();
     const cacheMs = 30 * 1000;
 
@@ -634,7 +632,6 @@ export default function Subscription() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
 
   // In multi-tariff mode without a specific subscription ID, redirect to list
   if (isMultiTariff && !subscriptionId && !isLoading) {

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { getApiErrorMessage } from '../utils/api-error';
+import { copyToClipboard as copyText } from '@/utils/clipboard';
 import { useParams, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -964,7 +966,7 @@ export default function AdminUserDetail() {
     } catch (error: unknown) {
       const axiosErr = error as { response?: { data?: { detail?: string } } };
       notify.error(
-        axiosErr?.response?.data?.detail || t('admin.users.detail.email.updateError'),
+        getApiErrorMessage(axiosErr, t('admin.users.detail.email.updateError')),
         t('common.error'),
       );
     } finally {
@@ -1055,7 +1057,7 @@ export default function AdminUserDetail() {
       notify.success(t('admin.users.detail.referrals.referrerAssigned'));
     } catch (error: unknown) {
       const axiosErr = error as { response?: { data?: { detail?: string } } };
-      notify.error(axiosErr?.response?.data?.detail || t('common.error'));
+      notify.error(getApiErrorMessage(axiosErr, t('common.error')));
     } finally {
       setActionLoading(false);
     }
@@ -1071,7 +1073,7 @@ export default function AdminUserDetail() {
       notify.success(t('admin.users.detail.referrals.referrerRemoved'));
     } catch (error: unknown) {
       const axiosErr = error as { response?: { data?: { detail?: string } } };
-      notify.error(axiosErr?.response?.data?.detail || t('common.error'));
+      notify.error(getApiErrorMessage(axiosErr, t('common.error')));
     } finally {
       setActionLoading(false);
     }
@@ -1088,7 +1090,7 @@ export default function AdminUserDetail() {
       notify.success(t('admin.users.detail.referrals.referralRemoved'));
     } catch (error: unknown) {
       const axiosErr = error as { response?: { data?: { detail?: string } } };
-      notify.error(axiosErr?.response?.data?.detail || t('common.error'));
+      notify.error(getApiErrorMessage(axiosErr, t('common.error')));
     } finally {
       setActionLoading(false);
     }
@@ -1108,7 +1110,7 @@ export default function AdminUserDetail() {
       notify.success(t('admin.users.detail.referrals.referralAdded'));
     } catch (error: unknown) {
       const axiosErr = error as { response?: { data?: { detail?: string } } };
-      notify.error(axiosErr?.response?.data?.detail || t('common.error'));
+      notify.error(getApiErrorMessage(axiosErr, t('common.error')));
     } finally {
       setActionLoading(false);
     }
@@ -1129,7 +1131,7 @@ export default function AdminUserDetail() {
       );
     } catch (error: unknown) {
       const axiosErr = error as { response?: { data?: { detail?: string } } };
-      notify.error(axiosErr?.response?.data?.detail || t('admin.users.detail.accountMerge.error'));
+      notify.error(getApiErrorMessage(axiosErr, t('admin.users.detail.accountMerge.error')));
       setMergeTarget(null);
     } finally {
       setActionLoading(false);
@@ -1153,7 +1155,7 @@ export default function AdminUserDetail() {
       await loadUser();
     } catch (error: unknown) {
       const axiosErr = error as { response?: { data?: { detail?: string } } };
-      notify.error(axiosErr?.response?.data?.detail || t('admin.users.detail.accountMerge.error'));
+      notify.error(getApiErrorMessage(axiosErr, t('admin.users.detail.accountMerge.error')));
     } finally {
       setActionLoading(false);
     }
@@ -1426,12 +1428,12 @@ export default function AdminUserDetail() {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
     const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
   };
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyText(text);
       notify.success(t('admin.users.detail.copied'));
     } catch {}
   };

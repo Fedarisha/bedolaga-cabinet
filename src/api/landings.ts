@@ -15,6 +15,8 @@ export interface LandingTariffPeriod {
   original_price_kopeks: number | null;
   original_price_label: string | null;
   discount_percent: number | null;
+  /** Период, отмеченный оператором как самый выгодный. */
+  is_highlighted?: boolean;
 }
 
 export interface LandingTariff {
@@ -25,8 +27,9 @@ export interface LandingTariff {
   device_limit: number;
   tier_level: number;
   periods: LandingTariffPeriod[];
-  /** When true, this tariff is a daily tariff: `periods` is empty and the UI
-   * renders a dedicated "Суточный" entry priced at `daily_price_kopeks`. */
+  /** Тариф, отмеченный оператором как выгодный. */
+  is_highlighted?: boolean;
+  /** Daily tariff: the single purchasable period is 1 day, priced per day. */
   is_daily?: boolean;
   daily_price_kopeks?: number | null;
   daily_original_price_kopeks?: number | null;
@@ -117,6 +120,10 @@ export interface PurchaseRequest {
   yandex_cid?: string;
   referrer?: string;
   subid?: string;
+  // Слаг рекламной кампании: без него покупка гостем не попадает в статистику
+  // кампании и не даёт её бонус — auth-флоу, который привязывает кампанию
+  // обычно, на этом пути не срабатывает.
+  campaign_slug?: string;
 }
 
 export interface PurchaseResponse {

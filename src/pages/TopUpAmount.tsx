@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { getApiErrorMessage } from '../utils/api-error';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -203,7 +204,7 @@ export default function TopUpAmount() {
     onError: (err: unknown) => {
       haptic.notification('error');
       const axiosError = err as { response?: { data?: { detail?: string }; status?: number } };
-      setError(axiosError?.response?.data?.detail || t('balance.errors.invoiceFailed'));
+      setError(getApiErrorMessage(axiosError, t('balance.errors.invoiceFailed')));
     },
   });
 
@@ -278,8 +279,7 @@ export default function TopUpAmount() {
       }
     },
     onError: (err: unknown) => {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || '';
+      const detail = getApiErrorMessage(err, '');
       setError(
         detail.includes('not yet implemented') ? t('balance.useBot') : detail || t('common.error'),
       );
@@ -359,7 +359,7 @@ export default function TopUpAmount() {
       // display-currency rounding step below it, so typing the advertised (rounded)
       // minimum isn't rejected by FX rounding.
       const decimals = targetCurrency === 'IRR' ? 0 : 2;
-      const roundingStep = convertToRub(Math.pow(10, -decimals));
+      const roundingStep = convertToRub(10 ** -decimals);
       if (canonicalRubles < minRubles && canonicalRubles >= minRubles - roundingStep) {
         canonicalRubles = minRubles;
       }

@@ -8,11 +8,12 @@ import {
   retrieveLaunchParams,
 } from '@telegram-apps/sdk-react';
 import { useQuery } from '@tanstack/react-query';
-import Twemoji from 'react-twemoji';
+import Twemoji from '@/lib/twemoji';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PlatformProvider } from './platform/PlatformProvider';
 import { ThemeColorsProvider } from './providers/ThemeColorsProvider';
+import { DocumentBranding } from './components/DocumentBranding';
 import { WebSocketProvider } from './providers/WebSocketProvider';
 import { ToastProvider } from './components/Toast';
 import { TooltipProvider } from './components/primitives/Tooltip';
@@ -266,6 +267,7 @@ export function AppWithNavigator() {
       <ErrorBoundary level="page">
         <PlatformProvider>
           <ThemeColorsProvider>
+            <DocumentBranding />
             <TooltipProvider>
               <ToastProvider>
                 <WebSocketProvider>
