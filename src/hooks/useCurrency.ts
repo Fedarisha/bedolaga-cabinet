@@ -14,8 +14,13 @@ export function useCurrency() {
   const isRussian = true;
   const currencySymbol = t('common.currency');
 
+  // «1 875», «156,25»: русская группировка разрядов, копейки только если они есть.
   const formatAmount = useCallback((rubAmount: number, decimals: number = 2): string => {
-    return rubAmount.toFixed(decimals);
+    const whole = Number.isInteger(Number(rubAmount.toFixed(decimals)));
+    return rubAmount.toLocaleString('ru-RU', {
+      minimumFractionDigits: whole ? 0 : decimals,
+      maximumFractionDigits: decimals,
+    });
   }, []);
 
   const formatWithCurrency = useCallback(

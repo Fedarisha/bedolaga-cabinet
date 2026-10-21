@@ -217,7 +217,7 @@ export default function Home() {
             {/* Схема на салфетке */}
             <figure
               id="how"
-              className="napkin relative z-[3] m-0 mt-10 rotate-[1.4deg] scroll-mt-24 px-6 pb-6 pt-8 transition-transform duration-500 hover:rotate-[0.6deg] md:rotate-[2.4deg]"
+              className="napkin relative z-[3] m-0 mt-10 rotate-[1.4deg] scroll-mt-24 self-start px-6 pb-5 pt-7 md:mt-6 transition-transform duration-500 hover:rotate-[0.6deg] md:rotate-[2.4deg]"
               aria-label={t('home.napkin.schemeLabel')}
             >
               <ol className="m-0 list-none p-0 px-1.5">
@@ -292,15 +292,22 @@ export default function Home() {
                 </li>
                 <li className="relative ml-2.5 h-[54px] text-accent-500" aria-hidden="true">
                   <HandArrow d="M17 2c-2 16 5 31 3 48M11 41c3 4 6 7 9 9 2-3 6-7 9-9" />
+                  <span className="absolute left-[76px] top-2.5 max-w-[190px] -rotate-3 font-hand text-[19px] text-dark-100 sm:max-w-none sm:whitespace-nowrap sm:text-[22px]">
+                    {t('home.napkin.scheme.exit')}
+                  </span>
                 </li>
                 <li className="grid grid-cols-[54px_1fr] items-center gap-3.5">
                   <NodeIcon>
                     <path
                       pathLength={1}
                       className="napkin-draw"
-                      d="M10 34c7.6-1 9.6-12.6 15-19.4 2.4-3 5.4-4.6 8.4-3.4M33.4 11.2c-1.2 3.4-.6 6.4 1.6 8.4M33.4 11.2c3.4-.4 6.2.6 7.6 2.4"
+                      d="M7.5 10.2c11-.9 22.2-.8 33.2-.1.7 9.4.6 18.8-.1 28.2-11 .8-22.1.8-33-.1-.7-9.4-.8-18.8-.1-28Z"
                     />
-                    <path pathLength={1} className="napkin-draw" d="M8 40c10.4.8 21.6.9 32 0" />
+                    <path
+                      pathLength={1}
+                      className="napkin-draw"
+                      d="M7.6 17.4c11 .5 22 .4 33-.1M12.6 13.8h.1M16.4 13.8h.1M14 25c6.4-.3 12.8-.2 19.2.1M14 31.2c4.2-.2 8.2-.1 12.2.1"
+                    />
                   </NodeIcon>
                   <div className="font-hand text-3xl font-bold leading-none text-accent-500">
                     {t('home.napkin.scheme.anySite')}

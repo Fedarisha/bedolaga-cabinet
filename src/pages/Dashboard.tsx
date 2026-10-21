@@ -563,7 +563,7 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-6 space-y-2 lg:mt-0">
-        <h2 className="napkin-label pt-4 lg:pt-1">{t('dashboard.napkin.more')}</h2>
+        <h2 className="sr-only">{t('dashboard.napkin.more')}</h2>
         <StatsGrid balanceRubles={balanceData?.balance_rubles || 0} />
 
         {wheelConfig?.is_enabled && (

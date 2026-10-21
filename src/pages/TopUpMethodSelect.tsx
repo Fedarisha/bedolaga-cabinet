@@ -52,13 +52,11 @@ export default function TopUpMethodSelect() {
       animate="animate"
     >
       <motion.div variants={staggerItem}>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {t('balance.selectPaymentMethod')}
-        </h1>
+        <h1 className="text-3xl font-extrabold text-dark-50">{t('balance.selectPaymentMethod')}</h1>
       </motion.div>
 
-      <motion.div variants={staggerItem}>
-        <Card>
+      <motion.div variants={staggerItem} className="max-w-xl">
+        <div className="napkin napkin-tilt">
           {isLoading ? (
             <SkeletonGroup className="space-y-3">
               <Skeleton variant="card" count={3} className="h-16" />
@@ -68,7 +66,7 @@ export default function TopUpMethodSelect() {
               {t('balance.noPaymentMethods')}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="napkin-rows">
               {paymentMethods.map((method) => {
                 const methodKey = method.id.toLowerCase().replace(/-/g, '_');
                 const translatedName = t(`balance.paymentMethods.${methodKey}.name`, {
@@ -79,35 +77,39 @@ export default function TopUpMethodSelect() {
                 });
 
                 return (
-                  <Card
+                  <button
                     key={method.id}
-                    interactive={method.is_available}
-                    className={!method.is_available ? 'cursor-not-allowed opacity-50' : ''}
-                    onClick={() => method.is_available && handleMethodClick(method.id)}
+                    type="button"
+                    disabled={!method.is_available}
+                    onClick={() => handleMethodClick(method.id)}
+                    className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3.5 py-4 text-left first:pt-1 last:pb-1 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <div className="flex items-center gap-3">
-                      <PaymentMethodIcon method={methodKey} className="h-8 w-8 flex-shrink-0" />
-                      <div className="font-semibold text-dark-100">
+                    <PaymentMethodIcon method={methodKey} className="h-8 w-8 flex-shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-lg font-semibold text-dark-50">
                         {method.name || translatedName}
-                      </div>
-                    </div>
-                    {(method.description || translatedDesc) && (
-                      <div className="mt-1 text-sm text-dark-500">
-                        {method.description || translatedDesc}
-                      </div>
-                    )}
-                    <div className="mt-3 text-xs text-dark-400">
-                      {formatAmount(method.min_amount_kopeks / 100, 0)} –{' '}
-                      {formatAmount(method.max_amount_kopeks / 100, 0)}
-                      {'\u00A0'}
-                      {currencySymbol}
-                    </div>
-                  </Card>
+                      </span>
+                      {(method.description || translatedDesc) && (
+                        <span className="block text-sm text-dark-400">
+                          {method.description || translatedDesc}
+                        </span>
+                      )}
+                      <span className="block font-hand text-xl text-accent-500">
+                        {formatAmount(method.min_amount_kopeks / 100, 0)} –{' '}
+                        {formatAmount(method.max_amount_kopeks / 100, 0)}
+                        {'\u00A0'}
+                        {currencySymbol}
+                      </span>
+                    </span>
+                    <span className="font-hand text-3xl text-accent-500" aria-hidden="true">
+                      →
+                    </span>
+                  </button>
                 );
               })}
             </div>
           )}
-        </Card>
+        </div>
       </motion.div>
     </motion.div>
   );

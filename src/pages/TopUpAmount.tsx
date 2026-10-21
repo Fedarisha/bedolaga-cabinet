@@ -12,7 +12,8 @@ import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { useHaptic, usePlatform } from '@/platform';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import type { PaymentMethod, PaymentMethodOption } from '../types';
-import BentoCard from '../components/ui/BentoCard';
+import { WebBackButton } from '../components/WebBackButton';
+import NapkinStep from '../components/napkin/NapkinStep';
 import { saveTopUpPendingInfo } from '../utils/topUpStorage';
 import { useAuthStore } from '../store/auth';
 import { isValidEmail } from '../utils/validation';
@@ -26,7 +27,6 @@ import {
   CryptoIcon,
   ExclamationIcon,
   ExternalLinkIcon,
-  SparklesIcon,
   StarIcon,
 } from '@/components/icons';
 
@@ -139,9 +139,7 @@ export default function TopUpAmount() {
   );
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
   const [email, setEmail] = useState<string>(profileEmail);
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
 
   useEffect(() => {
     setEmail((current) => (current ? current : profileEmail));
@@ -424,84 +422,56 @@ export default function TopUpAmount() {
     }
   };
 
+  const safeReturn = getSafeRedirectPath(returnTo);
+  const backTo = returnTo && safeReturn !== '/' ? safeReturn : '/balance';
+  const amountValid = !!amount && parseFloat(amount) > 0;
+  let step = 0;
+
   return (
     <motion.div
-      className="mx-auto max-w-lg space-y-5"
+      className="max-w-xl space-y-6 pt-2"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
     >
-      {/* Payment options (if any) */}
-      {hasOptions && orderedOptions.length > 0 && (
-        <motion.div variants={staggerItem} className="space-y-2">
-          <label className="text-sm font-medium text-dark-400">{t('balance.paymentMethod')}</label>
-          <div className="grid grid-cols-2 gap-2">
-            {orderedOptions.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setSelectedOption(opt.id)}
-                className={`relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
-                  selectedOption === opt.id
-                    ? 'bg-accent-500/15 text-accent-400 ring-2 ring-accent-500/40'
-                    : 'border border-dark-700/50 bg-dark-800/70 text-dark-300 hover:bg-dark-700/70'
-                }`}
-              >
-                {opt.name}
-                {selectedOption === opt.id && (
-                  <span className="absolute right-1.5 top-1.5">
-                    <span className="block h-2 w-2 rounded-full bg-accent-500" />
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-      )}
+      <motion.div variants={staggerItem} className="flex items-center gap-3">
+        <WebBackButton to={backTo} />
+        <h1 className="text-3xl font-extrabold text-dark-50">{t('balance.topUpBalance')}</h1>
+      </motion.div>
 
-      {/* Email for fiscal receipt */}
-      {!isStarsMethod && (
-        <motion.div variants={staggerItem} className="space-y-2">
-          <label className="text-sm font-medium text-dark-400">
-            {t('balance.receiptEmail', 'Email для чека')}
-          </label>
-          <div
-            className={`relative rounded-2xl transition-all duration-200 ${
-              isEmailFocused
-                ? 'bg-dark-800 ring-2 ring-accent-500/50'
-                : 'border border-dark-700/50 bg-dark-800/70'
-            }`}
-          >
-            <input
-              type="email"
-              inputMode="email"
-              enterKeyHint="next"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onFocus={() => setIsEmailFocused(true)}
-              onBlur={() => setIsEmailFocused(false)}
-              placeholder="you@example.com"
-              className="h-12 w-full bg-transparent px-4 text-base text-dark-100 placeholder:text-dark-600 focus:outline-none"
-            />
-          </div>
-          <p className="text-xs text-dark-500">
-            {t('balance.receiptEmailHint', 'Чек будет отправлен на указанный email')}
-          </p>
-        </motion.div>
-      )}
-
-      {/* Amount input + Submit button - inline */}
-      <motion.div variants={staggerItem} className="space-y-2">
-        <label className="text-sm font-medium text-dark-400">{t('balance.enterAmount')}</label>
-        <div className="flex gap-2">
-          <div
-            className={`relative flex-1 rounded-2xl transition-all duration-200 ${
-              isInputFocused
-                ? 'bg-dark-800 ring-2 ring-accent-500/50'
-                : 'border border-dark-700/50 bg-dark-800/70'
-            }`}
-          >
+      <motion.div variants={staggerItem} className="napkin napkin-tilt">
+        <NapkinStep n={++step} title={t('balance.amount')}>
+          {quickAmounts.length > 0 && (
+            <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {quickAmounts.map((a) => {
+                const val = getQuickValue(a);
+                const isSelected = amount === val;
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setAmount(val);
+                      setQuickRub(a);
+                      inputRef.current?.blur();
+                    }}
+                    className={`whitespace-nowrap rounded-[14px_18px_15px_17px] border-2 px-3 py-3 font-mono text-lg font-bold transition-all duration-200 hover:-translate-y-0.5 ${
+                      isSelected
+                        ? 'border-accent-500 bg-accent-500 text-on-accent'
+                        : 'border-dark-100 text-dark-100'
+                    }`}
+                  >
+                    {formatAmount(a, 0)}
+                    {'\u00A0'}
+                    {currencySymbol}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <label className="flex items-baseline gap-3 border-b-2 border-dark-100 pb-1 focus-within:border-accent-500">
+            <span className="sr-only">{t('balance.enterAmount')}</span>
             <input
               ref={inputRef}
               type="number"
@@ -512,113 +482,109 @@ export default function TopUpAmount() {
                 setAmount(e.target.value);
                 setQuickRub(null);
               }}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleSubmit();
                 }
               }}
-              placeholder="0"
-              className="h-14 w-full bg-transparent px-4 pr-12 text-xl font-bold text-dark-100 placeholder:text-dark-600 focus:outline-none"
+              placeholder={t('balance.napkin.otherAmount')}
+              className="h-12 min-w-0 flex-1 bg-transparent font-mono text-2xl font-bold text-dark-50 placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:text-dark-500 focus:outline-none"
               autoComplete="off"
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-dark-500">
-              {currencySymbol}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isPending || !amount || parseFloat(amount) <= 0}
-            className={`flex h-14 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl px-6 text-base font-bold transition-colors duration-200 ${
-              isPending || !amount || parseFloat(amount) <= 0
-                ? 'cursor-not-allowed bg-dark-700 text-dark-500'
-                : isStarsMethod
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/25 hover:from-yellow-400 hover:to-orange-400 active:from-yellow-600 active:to-orange-600'
-                  : 'bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25 transition-colors hover:bg-accent-400 active:bg-accent-600'
-            }`}
-          >
-            {isPending ? (
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : (
-              <>
-                <SparklesIcon className="h-4 w-4" />
-                <span>{t('balance.topUp')}</span>
-              </>
-            )}
-          </button>
-        </div>
+            <span className="font-mono text-xl font-bold text-dark-400">{currencySymbol}</span>
+          </label>
+          <p className="mt-2 font-hand text-xl text-accent-500">
+            {t('balance.napkin.range', {
+              min: formatAmount(minRubles, 0),
+              max: formatAmount(maxRubles, 0),
+              currency: currencySymbol,
+            })}
+          </p>
+        </NapkinStep>
+
+        {hasOptions && orderedOptions.length > 0 && (
+          <NapkinStep n={++step} title={t('balance.paymentMethod')}>
+            <div className="grid grid-cols-2 gap-2.5">
+              {orderedOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-pressed={selectedOption === opt.id}
+                  onClick={() => setSelectedOption(opt.id)}
+                  className={`rounded-[14px_18px_15px_17px] border-2 px-4 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
+                    selectedOption === opt.id
+                      ? 'border-accent-500 bg-accent-500 text-on-accent'
+                      : 'border-dark-100 text-dark-100'
+                  }`}
+                >
+                  {opt.name}
+                </button>
+              ))}
+            </div>
+          </NapkinStep>
+        )}
+
+        {!isStarsMethod && (
+          <NapkinStep n={++step} title={t('balance.napkin.receiptEmail')}>
+            <input
+              type="email"
+              inputMode="email"
+              enterKeyHint="next"
+              autoComplete="email"
+              aria-label={t('balance.receiptEmail')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ivan@mail.ru"
+              className="h-12 w-full border-b-2 border-dark-100 bg-transparent text-lg text-dark-50 placeholder:text-dark-500 focus:border-accent-500 focus:outline-none"
+            />
+            <p className="mt-2 text-sm text-dark-400">{t('balance.napkin.receiptHint')}</p>
+          </NapkinStep>
+        )}
       </motion.div>
 
-      {/* Quick amount buttons */}
-      {quickAmounts.length > 0 && (
-        <motion.div variants={staggerItem} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {quickAmounts.map((a) => {
-            const val = getQuickValue(a);
-            const isSelected = amount === val;
-            return (
-              <BentoCard
-                key={a}
-                as="button"
-                type="button"
-                onClick={() => {
-                  setAmount(val);
-                  setQuickRub(a);
-                  inputRef.current?.blur();
-                }}
-                hover
-                glow={isSelected}
-                className={`flex flex-col items-center justify-center px-2 py-3 ${
-                  isSelected ? 'border-accent-500/50 bg-accent-500/10' : ''
-                }`}
-              >
-                <span
-                  className={`text-base font-bold ${isSelected ? 'text-accent-400' : 'text-dark-200'}`}
-                >
-                  {formatAmount(a, 0)}
-                </span>
-                <span
-                  className={`mt-0.5 text-xs ${isSelected ? 'text-accent-400/70' : 'text-dark-500'}`}
-                >
-                  {currencySymbol}
-                </span>
-              </BentoCard>
-            );
-          })}
-        </motion.div>
-      )}
+      <motion.div variants={staggerItem}>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isPending || !amountValid}
+          className="napkin-btn"
+        >
+          {isPending ? (
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : amountValid ? (
+            t('balance.napkin.payAmount', {
+              amount: formatAmount(parseFloat(amount), currencyDecimals),
+              currency: currencySymbol,
+            })
+          ) : (
+            t('balance.topUp')
+          )}
+        </button>
+      </motion.div>
 
       {/* Error message */}
       {error && (
         <motion.div
           variants={staggerItem}
-          className="flex items-center gap-2 rounded-xl border border-error-500/20 bg-error-500/10 p-3"
+          className="flex items-center gap-2 rounded-xl border-2 border-error-500 p-3"
         >
-          <ExclamationIcon className="h-5 w-5 shrink-0 text-error-400" />
-          <span className="text-sm text-error-400">{error}</span>
+          <ExclamationIcon className="h-5 w-5 shrink-0 text-error-700" />
+          <span className="text-base text-error-700">{error}</span>
         </motion.div>
       )}
 
       {/* Payment link display - shown when URL is received */}
       {paymentUrl && (
-        <motion.div
-          variants={staggerItem}
-          className="space-y-3 rounded-2xl border border-success-500/20 bg-success-500/10 p-4"
-        >
-          <div className="flex items-center gap-2 text-success-400">
+        <motion.div variants={staggerItem} className="napkin space-y-3">
+          <div className="flex items-center gap-2 text-success-700">
             <CheckIcon className="h-5 w-5" />
             <span className="font-semibold">{t('balance.paymentReady')}</span>
           </div>
 
           <p className="text-sm text-dark-400">{t('balance.clickToOpenPayment')}</p>
 
-          <button
-            type="button"
-            onClick={handleOpenPayment}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-success-500 font-bold text-white transition-colors hover:bg-success-400 active:bg-success-600"
-          >
+          <button type="button" onClick={handleOpenPayment} className="napkin-btn">
             <ExternalLinkIcon />
             <span>{t('balance.openPaymentPage')}</span>
           </button>
