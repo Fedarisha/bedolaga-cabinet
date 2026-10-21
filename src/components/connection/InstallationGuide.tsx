@@ -9,10 +9,10 @@ import type {
   RemnawaveButtonClient,
 } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
-import { CardsBlock, TimelineBlock, AccordionBlock, MinimalBlock, BlockButtons } from './blocks';
-import type { BlockRendererProps, RenderBlock } from './blocks';
+import { NapkinStepsBlock, BlockButtons } from './blocks';
+import type { RenderBlock } from './blocks';
 import TvQuickConnect from './TvQuickConnect';
-import { BackIcon, BookOpenIcon, ChevronIcon } from '@/components/icons';
+import { BackIcon, BookOpenIcon } from '@/components/icons';
 
 const platformOrder = ['ios', 'android', 'windows', 'macos', 'linux', 'androidTV', 'appleTV'];
 
@@ -27,19 +27,44 @@ function detectPlatform(): string | null {
   return null;
 }
 
-const RENDERERS: Record<string, React.ComponentType<BlockRendererProps>> = {
-  cards: CardsBlock,
-  timeline: TimelineBlock,
-  accordion: AccordionBlock,
-  minimal: MinimalBlock,
-};
-
 /** TV quick-connect is a Happ-only feature (check.happ.su/sendtv) — show it only
  *  for the Happ app, detected by its happ:// deep-link scheme (name as fallback). */
 function isHappApp(app: RemnawaveAppClient | null): boolean {
   if (!app) return false;
   if ((app.deepLink ?? '').toLowerCase().startsWith('happ://')) return true;
   return app.name.toLowerCase().includes('happ');
+}
+
+const PLATFORM_ICON_PATHS: Record<string, string> = {
+  ios: 'M10 4.5h10a2.5 2.5 0 0 1 2.5 2.5v16a2.5 2.5 0 0 1-2.5 2.5H10A2.5 2.5 0 0 1 7.5 23V7A2.5 2.5 0 0 1 10 4.5Zm3 18h4',
+  android:
+    'M10 4.5h10a2.5 2.5 0 0 1 2.5 2.5v16a2.5 2.5 0 0 1-2.5 2.5H10A2.5 2.5 0 0 1 7.5 23V7A2.5 2.5 0 0 1 10 4.5Zm2 3.5h6',
+  windows: 'M5 6h20a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Zm6 20h8m-4-5v5',
+  macos: 'M7 7h16a2 2 0 0 1 2 2v10H5V9a2 2 0 0 1 2-2ZM2.5 23h25',
+  linux:
+    'M5 5h20a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm3 6 4 3-4 3m6 1h6',
+  androidTV: 'M5 5h20a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm4 21h12',
+  appleTV:
+    'M5 5h20a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm4 21h12M13 11v5m4-5v5',
+};
+
+function PlatformIcon({ platform }: { platform: string }) {
+  const d = PLATFORM_ICON_PATHS[platform];
+  if (!d) return null;
+  return (
+    <svg
+      viewBox="0 0 30 30"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="h-7 w-7"
+    >
+      <path d={d} />
+    </svg>
+  );
 }
 
 interface Props {
@@ -67,6 +92,8 @@ export default function InstallationGuide({
 
   const [activePlatformKey, setActivePlatformKey] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<RemnawaveAppClient | null>(null);
+  const [platformsOpen, setPlatformsOpen] = useState(false);
+  const [appsOpen, setAppsOpen] = useState(false);
 
   const getLocalizedText = useCallback(
     (text: LocalizedText | undefined): string => {
@@ -191,12 +218,8 @@ export default function InstallationGuide({
     [appConfig.platforms, appConfig.platformNames, getLocalizedText],
   );
 
-  // Platform SVG icon for dropdown
-  const currentPlatformSvg = getSvgHtml(currentPlatformData?.svgIconKey);
-
-  // Block renderer
-  const blockType = appConfig.uiConfig?.installationGuidesBlockType || 'cards';
-  const Renderer = RENDERERS[blockType] || CardsBlock;
+  // Шаги всегда в виде «салфетки», стиль из настроек панели не используется
+  const Renderer = NapkinStepsBlock;
 
   // For the Happ TV app (Android TV / Apple TV), inject the TV connect widget as
   // customNode so it renders THROUGH the active block style (cards/timeline/
@@ -213,126 +236,134 @@ export default function InstallationGuide({
     renderBlocks = selectedApp.blocks.map((b, i) => (i === idx ? { ...b, customNode: widget } : b));
   }
 
+  const platformLabel = currentPlatformKey ? getPlatformDisplayName(currentPlatformKey) : '';
+
   return (
-    <div className="space-y-6 pb-6">
-      {/* Header + platform dropdown */}
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="space-y-5 pb-6 pt-2">
+      <div className="flex items-start gap-3">
         {!isTelegramWebApp && (
           <button
             onClick={onGoBack}
             aria-label={t('common.back', 'Back')}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
+            className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-dark-100 transition-colors hover:bg-dark-900"
           >
             <BackIcon className="h-6 w-6" />
           </button>
         )}
-        <h2 className="flex-1 text-lg font-bold text-dark-100">
+        <h1 className="text-3xl font-extrabold leading-tight text-dark-50">
           {getBaseTranslation('installationGuideHeader', 'subscription.connection.title')}
-        </h2>
-        {appConfig.subscriptionUrl && onOpenQR && (
-          <button
-            onClick={() => onOpenQR()}
-            className={`order-last flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors sm:order-none sm:w-auto ${
-              isLight
-                ? 'border-dark-700/60 bg-white/80 text-dark-200 shadow-sm hover:border-dark-600'
-                : 'border-dark-700 bg-dark-800 text-dark-200 hover:border-dark-600'
-            }`}
-          >
-            <svg
-              className="h-4 w-4 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75H16.5v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h3v3h-3v-3z"
-              />
-            </svg>
-            <span>{t('subscription.connection.addAnotherDevice')}</span>
-          </button>
-        )}
-        {availablePlatforms.length > 1 && (
-          <div className="relative flex items-center">
-            {currentPlatformSvg && (
-              <div
-                className="pointer-events-none absolute left-3 z-10 h-5 w-5 text-dark-400 [&>svg]:h-full [&>svg]:w-full"
-                dangerouslySetInnerHTML={{ __html: currentPlatformSvg }}
-              />
-            )}
-            <select
-              value={currentPlatformKey || ''}
-              onChange={(e) => {
-                const newPlatform = e.target.value;
-                setActivePlatformKey(newPlatform);
-                const data = appConfig.platforms[newPlatform] as RemnawavePlatformData | undefined;
-                if (data?.apps?.length) {
-                  // Keep the user's current app (by name) if it also exists on the
-                  // new platform; only fall back to featured/first otherwise.
-                  const app =
-                    data.apps.find((a) => a.name === selectedApp?.name) ||
-                    data.apps.find((a) => a.featured) ||
-                    data.apps[0];
-                  if (app) setSelectedApp(app);
-                }
-              }}
-              className={`appearance-none rounded-xl border py-2 pr-8 text-sm font-medium outline-none transition-colors ${
-                isLight
-                  ? 'border-dark-700/60 bg-white/80 text-dark-200 shadow-sm hover:border-dark-600'
-                  : 'border-dark-700 bg-dark-800 text-dark-200 hover:border-dark-600'
-              } ${currentPlatformSvg ? 'pl-10' : 'pl-4'}`}
-            >
-              {availablePlatforms.map((p) => (
-                <option key={p} value={p}>
-                  {getPlatformDisplayName(p)}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute right-2.5 text-dark-400">
-              <ChevronIcon className="h-4 w-4" />
-            </div>
-          </div>
-        )}
+        </h1>
       </div>
 
-      {/* App chips */}
-      {currentPlatformApps.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {currentPlatformApps.map((app, idx) => {
-            const isSelected = selectedApp?.name === app.name;
-            const appIconSvg = getSvgHtml(app.svgIconKey);
-            return (
+      {/* Устройство: определяется само, «сменить» раскрывает плитки */}
+      {availablePlatforms.length > 0 && (
+        <div>
+          <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 text-lg">
+            <span>
+              {t('subscription.connection.deviceLine')}{' '}
+              <strong className="font-semibold">{platformLabel}</strong>
+            </span>
+            {availablePlatforms.length > 1 && (
               <button
-                key={app.name + idx}
-                onClick={() => setSelectedApp(app)}
-                className={`relative flex min-w-[calc(50%-0.25rem)] items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-[0.97] ${
-                  isSelected
-                    ? isLight
-                      ? 'bg-accent-500/15 text-accent-600 ring-1 ring-accent-500/40'
-                      : 'bg-accent-500/15 text-accent-400 ring-1 ring-accent-500/40'
-                    : isLight
-                      ? 'border border-dark-700/60 bg-white/80 text-dark-200 shadow-sm hover:border-dark-600/50 hover:bg-white'
-                      : 'border border-dark-700/50 bg-dark-800/80 text-dark-200 hover:border-dark-600/50 hover:bg-dark-700/80'
-                }`}
+                type="button"
+                onClick={() => setPlatformsOpen((v) => !v)}
+                aria-expanded={platformsOpen}
+                className="text-base text-accent-500 underline underline-offset-4"
               >
-                {app.featured && <span className="h-2 w-2 shrink-0 rounded-full bg-warning-400" />}
-                <span className="relative z-10 truncate">{app.name}</span>
-                {appIconSvg && (
-                  <div
-                    className="ml-auto h-7 w-7 shrink-0 opacity-30 [&>svg]:h-full [&>svg]:w-full"
-                    dangerouslySetInnerHTML={{ __html: appIconSvg }}
-                  />
-                )}
+                {t('subscription.connection.change')}
               </button>
-            );
-          })}
+            )}
+          </div>
+          {platformsOpen && (
+            <div
+              className="mt-3.5 grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-2.5"
+              role="radiogroup"
+              aria-label={t('subscription.connection.deviceLine')}
+            >
+              {availablePlatforms.map((p) => {
+                const checked = p === currentPlatformKey;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    onClick={() => {
+                      setActivePlatformKey(p);
+                      setPlatformsOpen(false);
+                      const data = appConfig.platforms[p] as RemnawavePlatformData | undefined;
+                      if (data?.apps?.length) {
+                        // Keep the user's current app (by name) if it also exists on the
+                        // new platform; only fall back to featured/first otherwise.
+                        const app =
+                          data.apps.find((a) => a.name === selectedApp?.name) ||
+                          data.apps.find((a) => a.featured) ||
+                          data.apps[0];
+                        if (app) setSelectedApp(app);
+                      }
+                    }}
+                    className={`relative grid justify-items-center gap-1.5 rounded-[14px_18px_15px_17px] border-2 px-2 py-3.5 text-base font-semibold transition-colors ${
+                      checked
+                        ? 'border-accent-500 bg-accent-500 text-on-accent'
+                        : 'border-dark-100 text-dark-100 hover:bg-dark-900'
+                    }`}
+                  >
+                    <PlatformIcon platform={p} />
+                    {getPlatformDisplayName(p)}
+                    {p === detectedPlatform && (
+                      <i className="absolute -right-1 -top-3 rotate-6 rounded-sm bg-marker px-1.5 font-hand text-lg not-italic text-accent-500">
+                        {t('subscription.connection.yours')}
+                      </i>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Приложение: первое из настроек, остальные под «другое» */}
+      {selectedApp && (
+        <div>
+          <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 text-lg">
+            <span>
+              {t('subscription.connection.appLine')}{' '}
+              <strong className="font-semibold">{selectedApp.name}</strong>
+            </span>
+            {currentPlatformApps.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setAppsOpen((v) => !v)}
+                aria-expanded={appsOpen}
+                className="text-base text-accent-500 underline underline-offset-4"
+              >
+                {t('subscription.connection.otherApp')}
+              </button>
+            )}
+          </div>
+          {appsOpen && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {currentPlatformApps.map((app, idx) => {
+                const isSelected = selectedApp?.name === app.name;
+                return (
+                  <button
+                    key={app.name + idx}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => setSelectedApp(app)}
+                    className={`rounded-full border-[1.5px] px-3.5 py-2 text-base transition-colors ${
+                      isSelected
+                        ? 'border-marker bg-marker font-semibold text-dark-100'
+                        : 'border-dark-100 text-dark-100 hover:bg-dark-900'
+                    }`}
+                  >
+                    {app.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -347,6 +378,17 @@ export default function InstallationGuide({
           <BookOpenIcon className="h-5 w-5" />
           {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
         </a>
+      )}
+
+      {/* QR-код — подключить другое устройство, например телевизор */}
+      {appConfig.subscriptionUrl && onOpenQR && (
+        <button
+          type="button"
+          onClick={() => onOpenQR()}
+          className="text-base text-accent-500 underline underline-offset-4"
+        >
+          {t('subscription.connection.addAnotherDevice')}
+        </button>
       )}
 
       {/* Blocks rendered in the panel's active style. For the Happ Android TV

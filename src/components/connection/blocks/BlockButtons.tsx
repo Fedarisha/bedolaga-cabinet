@@ -4,7 +4,6 @@ import { CheckIcon, CopyIcon } from '@/components/icons';
 import type { RemnawaveButtonClient, LocalizedText } from '@/types';
 import { copyToClipboard } from '@/utils/clipboard';
 import { collapseDoubledCryptPrefix, hasTemplates, resolveTemplate } from '@/utils/templateEngine';
-import { blockButtonClass } from './buttonStyles';
 
 // eslint-disable-next-line no-script-url
 const dangerousSchemes = ['javascript:', 'data:', 'vbscript:', 'file:'];
@@ -39,8 +38,6 @@ interface BlockButtonsProps {
 
 export function BlockButtons({
   buttons,
-  variant,
-  isLight,
   subscriptionUrl,
   hideLink,
   deepLink,
@@ -61,10 +58,8 @@ export function BlockButtons({
 
   if (!buttons || buttons.length === 0) return null;
 
-  const baseClass = blockButtonClass(variant, isLight);
-
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className="mt-3.5 flex flex-wrap gap-2.5">
       {buttons.map((btn, idx) => {
         const btnText = getLocalizedText(btn.text);
         const btnSvg = getSvgHtml(btn.svgIconKey);
@@ -87,15 +82,34 @@ export function BlockButtons({
               : raw;
           const url = resolved ? collapseDoubledCryptPrefix(resolved) : resolved;
           if (!url || hasTemplates(url) || !isValidDeepLink(url)) return null;
+          // Главное действие шага — крупная кнопка-чернила; под ней запасной путь,
+          // если приложение не открылось: скопировать ссылку и вставить вручную.
+          const canCopy =
+            !hideLink && !!subscriptionUrl && !buttons.some((b) => b.type === 'copyButton');
           return (
-            <button
-              key={idx}
-              onClick={() => onOpenDeepLink(url)}
-              className={`flex items-center gap-2 ${baseClass}`}
-            >
-              {btnIcon}
-              {btnText || getBaseTranslation('openApp', 'subscription.connection.openLink')}
-            </button>
+            <div key={idx} className="w-full">
+              <button
+                onClick={() => onOpenDeepLink(url)}
+                className="napkin-btn !w-auto !min-h-[54px]"
+              >
+                {btnIcon}
+                {btnText || getBaseTranslation('openApp', 'subscription.connection.openLink')}
+              </button>
+              {canCopy && (
+                <p className="mt-3 text-sm text-dark-400">
+                  {t('subscription.connection.notOpened')}{' '}
+                  <button
+                    type="button"
+                    onClick={() => subscriptionUrl && handleCopy(subscriptionUrl)}
+                    className="text-accent-500 underline underline-offset-4"
+                  >
+                    {copied
+                      ? t('subscription.connection.copied')
+                      : getBaseTranslation('copyLink', 'subscription.connection.copyLink')}
+                  </button>
+                </p>
+              )}
+            </div>
           );
         }
 
@@ -107,11 +121,7 @@ export function BlockButtons({
             <button
               key={idx}
               onClick={() => handleCopy(url)}
-              className={`flex items-center gap-2 ${
-                copied
-                  ? `rounded-xl border border-success-500 bg-success-500/10 px-4 py-2 text-sm font-medium ${isLight ? 'text-success-600' : 'text-success-400'}`
-                  : baseClass
-              }`}
+              className={`napkin-btn-line !w-auto !min-h-[48px] !text-base ${copied ? '!bg-marker' : ''}`}
             >
               {copied ? <CheckIcon /> : btnIcon || <CopyIcon />}
               {copied
@@ -130,7 +140,7 @@ export function BlockButtons({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-2 ${baseClass}`}
+            className="napkin-btn-line !w-auto !min-h-[48px] !text-base"
           >
             {btnIcon}
             {btnText}
