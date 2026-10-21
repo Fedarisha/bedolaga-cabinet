@@ -960,7 +960,24 @@
     "purchaseBalance": "Ваш баланс",
     "purchaseMissing": "Не хватает",
     "purchaseEnoughBalance": "Денег хватает для оплаты",
-    "topUpAndContinue": "Пополнить баланс и продолжить"
+    "topUpAndContinue": "Пополнить баланс и продолжить",
+    "napkin": {
+      "daysWord_one": "день",
+      "daysWord_few": "дня",
+      "daysWord_many": "дней",
+      "daysWord_other": "дня",
+      "hoursWord_one": "час",
+      "hoursWord_few": "часа",
+      "hoursWord_many": "часов",
+      "hoursWord_other": "часа",
+      "until": "до {{date}}",
+      "endedOn": "Закончилась {{date}}",
+      "connect": "Подключить устройство · {{used}} из {{max}}",
+      "connectUnlimited": "Подключить устройство · {{used}}",
+      "noSlots": "Все места заняты · {{used}} из {{max}}",
+      "change": "Изменить",
+      "devices": "Устройства"
+    }
   },
   "balance": {
     "title": "Баланс",

@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
-import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
 
 // ──────────────────────────────────────────────────────────────────
@@ -72,11 +71,11 @@ export function TrafficTopupSheet({
     return (
       <button
         onClick={onOpen}
-        className={`w-full rounded-xl border p-4 text-left transition-colors ${isDark ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600' : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'}`}
+        className="w-full rounded-lg border-b-[1.5px] border-dashed border-dark-700 px-1 py-4 text-left transition-colors hover:bg-dark-900"
       >
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-medium text-dark-100">
+            <div className="text-lg font-semibold text-dark-100">
               {t('subscription.additionalOptions.buyTraffic')}
             </div>
             <div className="mt-1 text-sm text-dark-400">
@@ -86,7 +85,9 @@ export function TrafficTopupSheet({
               })}
             </div>
           </div>
-          <ChevronRightIcon className="text-dark-400" />
+          <span className="font-hand text-3xl text-accent-500" aria-hidden="true">
+            →
+          </span>
         </div>
       </button>
     );

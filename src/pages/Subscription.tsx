@@ -1,15 +1,14 @@
 import { safeLocal } from '@/utils/safeStorage';
 import { uiLocale } from '@/utils/uiLocale';
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
 import { DEVICE_ALIAS_MAX_LENGTH } from '../constants/devices';
 import { WebBackButton } from '../components/WebBackButton';
+import { cn } from '@/lib/utils';
 import { useDestructiveConfirm } from '../platform/hooks/useNativeDialog';
-import TrafficProgressBar from '../components/dashboard/TrafficProgressBar';
-import { HoverBorderGradient } from '../components/ui/hover-border-gradient';
 import { useTrafficZone } from '../hooks/useTrafficZone';
 import { formatTraffic } from '../utils/formatTraffic';
 import { getGlassColors } from '../utils/glassTheme';
@@ -23,9 +22,7 @@ import {
   CopyIcon,
   CheckIcon,
   PauseIcon,
-  CalendarIcon,
   RefreshIcon,
-  DevicesIcon,
   DownloadIcon,
   TrashIcon,
 } from '../components/icons';
@@ -56,148 +53,6 @@ import { DeviceReductionSheet } from '../components/subscription/sheets/DeviceRe
 import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopupSheet';
 import { ServerManagementSheet } from '../components/subscription/sheets/ServerManagementSheet';
 import { DeleteSubscriptionSheet } from '../components/subscription/sheets/DeleteSubscriptionSheet';
-
-/** Isolated countdown so 1s interval doesn't re-render the whole page */
-const CountdownTimer = memo(function CountdownTimer({
-  endDate,
-  isActive,
-  glassColors: g,
-}: {
-  endDate: string;
-  isActive: boolean;
-  glassColors: ReturnType<typeof getGlassColors>;
-}) {
-  const { t } = useTranslation();
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-  useEffect(() => {
-    const endTime = new Date(endDate).getTime();
-    const tick = () => {
-      const diff = Math.max(0, endTime - Date.now());
-      setCountdown({
-        days: Math.floor(diff / 86_400_000),
-        hours: Math.floor((diff % 86_400_000) / 3_600_000),
-        minutes: Math.floor((diff % 3_600_000) / 60_000),
-        seconds: Math.floor((diff % 60_000) / 1_000),
-      });
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [endDate]);
-
-  const isExpired = !isActive;
-  const isUrgent = countdown.days <= 3;
-
-  const formattedDate = new Date(endDate).toLocaleDateString(uiLocale(), {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-
-  return (
-    <div
-      className="min-w-0 overflow-hidden rounded-[14px] p-3.5"
-      style={{
-        background: isExpired
-          ? 'rgba(255,59,92,0.06)'
-          : isUrgent
-            ? 'rgba(255,184,0,0.06)'
-            : g.innerBg,
-        border: isExpired
-          ? '1px solid rgba(255,59,92,0.15)'
-          : isUrgent
-            ? '1px solid rgba(255,184,0,0.15)'
-            : `1px solid ${g.innerBorder}`,
-      }}
-    >
-      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-dark-50/35">
-        <div
-          className="flex h-6 w-6 items-center justify-center rounded-[7px]"
-          style={{
-            background: isExpired
-              ? 'rgba(255,59,92,0.1)'
-              : isUrgent
-                ? 'rgba(255,184,0,0.1)'
-                : g.hoverBg,
-          }}
-        >
-          <span
-            style={{
-              color: isExpired
-                ? 'rgb(var(--color-critical-500))'
-                : isUrgent
-                  ? 'rgb(var(--color-urgent-400))'
-                  : g.textSecondary,
-            }}
-          >
-            <CalendarIcon className="h-[13px] w-[13px]" />
-          </span>
-        </div>
-        {t('dashboard.remaining')}
-      </div>
-      {isExpired ? (
-        <div
-          className="text-[18px] font-bold tracking-tight"
-          style={{ color: 'rgb(var(--color-critical-500))' }}
-        >
-          {t('subscription.expired')}
-        </div>
-      ) : (
-        <div className="flex items-baseline justify-between">
-          <div className="flex items-baseline gap-1 font-mono tabular-nums">
-            {countdown.days > 0 && (
-              <>
-                <span
-                  className="text-[20px] font-bold tracking-tight"
-                  style={{ color: isUrgent ? 'rgb(var(--color-urgent-400))' : g.text }}
-                >
-                  {countdown.days}
-                </span>
-                <span className="mr-1 text-[10px] font-medium text-dark-50/25">
-                  {t('subscription.daysShort')}
-                </span>
-              </>
-            )}
-            <span
-              className="text-[20px] font-bold tracking-tight"
-              style={{ color: isUrgent ? 'rgb(var(--color-urgent-400))' : g.text }}
-            >
-              {String(countdown.hours).padStart(2, '0')}
-            </span>
-            <span
-              className="mx-[-1px] text-[16px] font-bold opacity-30"
-              style={{ color: isUrgent ? 'rgb(var(--color-urgent-400))' : g.text }}
-            >
-              :
-            </span>
-            <span
-              className="text-[20px] font-bold tracking-tight"
-              style={{ color: isUrgent ? 'rgb(var(--color-urgent-400))' : g.text }}
-            >
-              {String(countdown.minutes).padStart(2, '0')}
-            </span>
-            <span
-              className="mx-[-1px] text-[16px] font-bold opacity-30"
-              style={{ color: isUrgent ? 'rgb(var(--color-urgent-400))' : g.text }}
-            >
-              :
-            </span>
-            <span
-              className="text-[20px] font-bold tracking-tight"
-              style={{ color: isUrgent ? 'rgb(var(--color-urgent-400))' : g.text }}
-            >
-              {String(countdown.seconds).padStart(2, '0')}
-            </span>
-          </div>
-          <div className="text-[10px] font-medium text-dark-50/25">
-            {t('subscription.expiresAt')}: {formattedDate}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
 
 export default function Subscription() {
   const { t } = useTranslation();
@@ -671,11 +526,7 @@ export default function Subscription() {
       {/* Page title */}
       <div className="flex items-center gap-3">
         <WebBackButton to={isMultiTariff ? '/subscriptions' : '/'} />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {isMultiTariff && (subscription?.name || subscription?.tariff_name)
-            ? subscription.name || subscription.tariff_name
-            : t('subscription.title')}
-        </h1>
+        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('subscription.title')}</h1>
       </div>
 
       {/* Current Subscription */}
@@ -689,22 +540,9 @@ export default function Subscription() {
             subscription.device_limit > 0 && connectedDevices >= subscription.device_limit;
 
           return (
-            <div
-              className="relative overflow-hidden rounded-3xl lg:backdrop-blur-xl"
-              style={{
-                background: g.cardBg,
-                border: subscription.is_trial
-                  ? '1px solid rgba(var(--color-accent-400), 0.15)'
-                  : isDark
-                    ? `1px solid ${g.cardBorder}`
-                    : `1px solid ${zone.mainHex}25`,
-                boxShadow: isDark
-                  ? g.shadow
-                  : `0 2px 16px ${zone.mainHex}12, 0 0 0 1px ${zone.mainHex}08`,
-                padding: '28px 28px 24px',
-              }}
-            >
-              {/* Decorative ambient radial + trial shimmer border were
+            <>
+              <div className="napkin napkin-tilt">
+                {/* Decorative ambient radial + trial shimmer border were
                   removed: they carried no information, leaked zone/accent
                   hue into pure decoration (violates DESIGN.md
                   Tunable-but-Scarce + Status-Hue Lockout rules), and the
@@ -712,826 +550,747 @@ export default function Subscription() {
                   earlier in this branch. Trial state is conveyed by the
                   header badge. */}
 
-              {/* ─── Header ─── */}
-              <div className="mb-6 flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  {/* Zone indicator */}
-                  <div className="mb-1 flex items-center gap-2">
-                    <div
-                      className="h-2 w-2 rounded-full"
-                      style={{
-                        background: zone.mainHex,
-                        boxShadow: `0 0 8px ${zone.mainHex}80`,
-                        transition: 'all 0.6s ease',
-                      }}
-                      aria-hidden="true"
-                    />
-                    <span
-                      className="font-mono text-[11px] font-semibold uppercase tracking-widest"
-                      style={{ color: zone.mainHex, transition: 'color 0.6s ease' }}
-                    >
-                      {isUnlimited ? t('dashboard.unlimited') : t(zone.labelKey)}
-                    </span>
-                  </div>
-
-                  {/* Plan name + custom name editor */}
-                  {isEditingName ? (
-                    <div className="mt-1 space-y-2">
-                      <input
-                        type="text"
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        placeholder={t('subscription.name.placeholder')}
-                        maxLength={255}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            saveEditName();
-                          } else if (e.key === 'Escape') {
-                            e.preventDefault();
-                            cancelEditName();
-                          }
-                        }}
-                        className="input w-full text-sm"
-                      />
-                      <div className="flex flex-wrap gap-2">
+                {/* ─── Header ─── */}
+                <div className="mb-6 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    {/* Plan name + custom name editor */}
+                    {isEditingName ? (
+                      <div className="mt-1 space-y-2">
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          placeholder={t('subscription.name.placeholder')}
+                          maxLength={255}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              saveEditName();
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              cancelEditName();
+                            }
+                          }}
+                          className="input w-full text-sm"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={saveEditName}
+                            disabled={renameMutation.isPending}
+                            className="btn-primary px-3 py-1 text-xs"
+                          >
+                            {renameMutation.isPending ? '…' : t('subscription.name.save')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditName}
+                            disabled={renameMutation.isPending}
+                            className="btn-secondary px-3 py-1 text-xs"
+                          >
+                            {t('subscription.name.cancel')}
+                          </button>
+                        </div>
+                        {renameMutation.isError && (
+                          <div className="text-xs text-error-400">
+                            {getErrorMessage(renameMutation.error) ||
+                              t('subscription.name.saveError')}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="min-w-0 font-display text-xl font-extrabold leading-tight text-dark-50">
+                          {subscription.name ||
+                            subscription.tariff_name ||
+                            t('subscription.currentPlan')}
+                        </h2>
                         <button
                           type="button"
-                          onClick={saveEditName}
-                          disabled={renameMutation.isPending}
-                          className="btn-primary px-3 py-1 text-xs"
+                          onClick={startEditName}
+                          className="text-dark-400 transition-colors hover:text-dark-200"
+                          aria-label={t('subscription.name.edit')}
+                          title={t('subscription.name.edit')}
                         >
-                          {renameMutation.isPending ? '…' : t('subscription.name.save')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEditName}
-                          disabled={renameMutation.isPending}
-                          className="btn-secondary px-3 py-1 text-xs"
-                        >
-                          {t('subscription.name.cancel')}
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
                         </button>
                       </div>
-                      {renameMutation.isError && (
-                        <div className="text-xs text-error-400">
-                          {getErrorMessage(renameMutation.error) ||
-                            t('subscription.name.saveError')}
-                        </div>
-                      )}
-                    </div>
+                    )}
+                    {!isEditingName && subscription.name && subscription.tariff_name && (
+                      <div className="mt-0.5 text-xs text-dark-400">{subscription.tariff_name}</div>
+                    )}
+                  </div>
+
+                  {/* Status badge */}
+                  <span
+                    className={cn(
+                      'max-w-[55%] shrink-0 rounded-full border-[1.5px] border-current px-3 py-0.5 text-center text-sm font-semibold',
+                      subscription.is_active
+                        ? 'text-success-700'
+                        : subscription.is_limited
+                          ? 'text-warning-700'
+                          : 'text-error-700',
+                    )}
+                  >
+                    {subscription.is_active
+                      ? subscription.is_trial
+                        ? t('subscription.trialStatus')
+                        : t('subscription.active')
+                      : subscription.is_limited
+                        ? t('subscription.trafficLimited')
+                        : subscription.status === 'disabled'
+                          ? t('subscription.pause.suspended')
+                          : t('subscription.expired')}
+                  </span>
+                </div>
+
+                {/* ─── Сколько осталось ─── */}
+                <div className="mb-5 flex items-baseline gap-2.5">
+                  {subscription.is_active || subscription.is_limited ? (
+                    <>
+                      <b className="font-hand text-6xl leading-[0.8] text-accent-500">
+                        {subscription.days_left > 0
+                          ? subscription.days_left
+                          : subscription.hours_left}
+                      </b>
+                      <span className="text-lg text-dark-100">
+                        {subscription.days_left > 0
+                          ? t('subscription.napkin.daysWord', { count: subscription.days_left })
+                          : t('subscription.napkin.hoursWord', { count: subscription.hours_left })}
+                        <small className="block text-sm text-dark-400">
+                          {t('subscription.napkin.until', {
+                            date: new Date(subscription.end_date).toLocaleDateString(uiLocale(), {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            }),
+                          })}
+                        </small>
+                      </span>
+                    </>
                   ) : (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="min-w-0 text-lg font-bold tracking-tight text-dark-50">
-                        {subscription.name ||
-                          subscription.tariff_name ||
-                          t('subscription.currentPlan')}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={startEditName}
-                        className="text-dark-400 transition-colors hover:text-dark-200"
-                        aria-label={t('subscription.name.edit')}
-                        title={t('subscription.name.edit')}
+                    <span className="text-lg text-dark-100">
+                      {t('subscription.napkin.endedOn', {
+                        date: new Date(subscription.end_date).toLocaleDateString(uiLocale(), {
+                          day: 'numeric',
+                          month: 'long',
+                        }),
+                      })}
+                    </span>
+                  )}
+                </div>
+
+                {/* ─── Traffic Limited Banner ─── */}
+                {subscription.is_limited && (
+                  <div
+                    className="mb-6 rounded-[14px] p-4"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, rgba(255,184,0,0.08), rgba(255,184,0,0.03))',
+                      border: '1px solid rgba(255,184,0,0.2)',
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
+                        style={{ background: 'rgba(255,184,0,0.12)' }}
                       >
                         <svg
-                          width="14"
-                          height="14"
+                          width="16"
+                          height="16"
                           viewBox="0 0 24 24"
                           fill="none"
-                          stroke="currentColor"
+                          stroke="rgb(var(--color-urgent-400))"
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          aria-hidden="true"
                         >
-                          <path d="M12 20h9" />
-                          <path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
-                      </button>
-                    </div>
-                  )}
-                  {!isEditingName && subscription.name && subscription.tariff_name && (
-                    <div className="mt-0.5 text-xs text-dark-400">{subscription.tariff_name}</div>
-                  )}
-                </div>
-
-                {/* Status badge */}
-                <span
-                  className="max-w-[55%] shrink-0 rounded-full px-3 py-1 text-center font-mono text-[10px] font-semibold uppercase tracking-wider"
-                  style={{
-                    background: subscription.is_active
-                      ? `${zone.mainHex}15`
-                      : subscription.is_limited
-                        ? 'rgba(255,184,0,0.12)'
-                        : 'rgba(255,59,92,0.12)',
-                    border: subscription.is_active
-                      ? `1px solid ${zone.mainHex}30`
-                      : subscription.is_limited
-                        ? '1px solid rgba(255,184,0,0.25)'
-                        : '1px solid rgba(255,59,92,0.25)',
-                    color: subscription.is_active
-                      ? zone.mainHex
-                      : subscription.is_limited
-                        ? 'rgb(var(--color-urgent-400))'
-                        : 'rgb(var(--color-critical-500))',
-                  }}
-                >
-                  {subscription.is_active
-                    ? subscription.is_trial
-                      ? t('subscription.trialStatus')
-                      : t('subscription.active')
-                    : subscription.is_limited
-                      ? t('subscription.trafficLimited')
-                      : subscription.status === 'disabled'
-                        ? t('subscription.pause.suspended')
-                        : t('subscription.expired')}
-                </span>
-              </div>
-
-              {/* ─── Traffic Limited Banner ─── */}
-              {subscription.is_limited && (
-                <div
-                  className="mb-6 rounded-[14px] p-4"
-                  style={{
-                    background:
-                      'linear-gradient(135deg, rgba(255,184,0,0.08), rgba(255,184,0,0.03))',
-                    border: '1px solid rgba(255,184,0,0.2)',
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
-                      style={{ background: 'rgba(255,184,0,0.12)' }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="rgb(var(--color-urgent-400))"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className="text-sm font-semibold"
-                        style={{ color: 'rgb(var(--color-urgent-400))' }}
-                      >
-                        {t('subscription.trafficLimitedTitle')}
-                      </p>
-                      <p className="mt-1 text-xs text-dark-400">
-                        {t('subscription.trafficLimitedDescription')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ─── Trial Info Banner ─── */}
-              {subscription.is_trial && subscription.is_active && (
-                <div
-                  className="mb-6 rounded-[14px] p-4"
-                  style={{
-                    background:
-                      'linear-gradient(135deg, rgba(var(--color-accent-400), 0.08), rgba(var(--color-accent-400), 0.03))',
-                    border: '1px solid rgba(var(--color-accent-400), 0.12)',
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
-                      style={{ background: 'rgba(var(--color-accent-400), 0.12)' }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="rgb(var(--color-accent-400))"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: 'rgb(var(--color-accent-400))' }}
-                      >
-                        {t('subscription.trialInfo.title')}
                       </div>
-                      <div className="mt-1 text-[12px] text-dark-50/40">
-                        {t('subscription.trialInfo.description')}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-4">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="font-mono text-[12px] font-semibold"
-                            style={{ color: 'rgb(var(--color-accent-400))' }}
-                          >
-                            {subscription.days_left > 0
-                              ? t('subscription.days', { count: subscription.days_left })
-                              : `${subscription.hours_left}${t('subscription.hours')} ${subscription.minutes_left}${t('subscription.minutes')}`}
-                          </span>
-                          <span className="text-[11px] text-dark-50/30">
-                            {t('subscription.trialInfo.remaining')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="font-mono text-[12px] font-semibold"
-                            style={{ color: 'rgb(var(--color-accent-400))' }}
-                          >
-                            {subscription.traffic_limit_gb || '∞'} {t('common.units.gb')}
-                          </span>
-                          <span className="text-[11px] text-dark-50/30">
-                            {t('subscription.traffic')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="font-mono text-[12px] font-semibold"
-                            style={{ color: 'rgb(var(--color-accent-400))' }}
-                          >
-                            {subscription.device_limit === 0 ? '∞' : subscription.device_limit}
-                          </span>
-                          <span className="text-[11px] text-dark-50/30">
-                            {t('subscription.devices')}
-                          </span>
-                        </div>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="text-sm font-semibold"
+                          style={{ color: 'rgb(var(--color-urgent-400))' }}
+                        >
+                          {t('subscription.trafficLimitedTitle')}
+                        </p>
+                        <p className="mt-1 text-xs text-dark-400">
+                          {t('subscription.trafficLimitedDescription')}
+                        </p>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* ─── Traffic Progress ─── */}
-              <div className="mb-6">
-                <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-dark-50/40">
-                    {t('subscription.traffic')}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-dark-50/30">
-                      {isUnlimited
-                        ? formatTraffic(usedGb)
-                        : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
-                    </span>
-                    <button
-                      onClick={() => refreshTrafficMutation.mutate()}
-                      disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-dark-50/30 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <RefreshIcon
-                        className="h-3 w-3"
-                        spinning={refreshTrafficMutation.isPending}
-                      />
-                      {trafficRefreshCooldown > 0
-                        ? `${trafficRefreshCooldown}s`
-                        : t('common.refresh')}
-                    </button>
-                  </div>
-                </div>
-                {subscription.traffic_reset_mode &&
-                  subscription.traffic_reset_mode !== 'NO_RESET' && (
-                    <div className="mb-2 text-[10px] text-dark-50/25">
-                      {t(`subscription.trafficReset.${subscription.traffic_reset_mode}`)}
-                    </div>
-                  )}
-                <TrafficProgressBar
-                  usedGb={usedGb}
-                  limitGb={subscription.traffic_limit_gb}
-                  percent={usedPercent}
-                  isUnlimited={isUnlimited}
-                  compact
-                />
-              </div>
-
-              {/* ─── Connect Device Button ─── */}
-              {subscription.subscription_url && (
-                <HoverBorderGradient
-                  as="button"
-                  accentColor={zone.mainHex}
-                  disabled={isAtDeviceLimit}
-                  onClick={() => {
-                    if (isAtDeviceLimit) {
-                      haptic.notification('error');
-                      return;
-                    }
-                    navigate(subscriptionId ? `/connection?sub=${subscriptionId}` : '/connection');
-                  }}
-                  className={`mb-5 flex w-full items-center gap-3.5 rounded-[14px] p-3.5 text-left transition-shadow duration-300${isAtDeviceLimit ? 'cursor-not-allowed opacity-50' : ''}`}
-                  style={{ fontFamily: 'inherit' }}
-                >
+                {/* ─── Trial Info Banner ─── */}
+                {subscription.is_trial && subscription.is_active && (
                   <div
-                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] transition-colors duration-500"
-                    style={{ background: `${zone.mainHex}12`, color: zone.mainHex }}
-                  >
-                    <DevicesIcon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold tracking-tight text-dark-50">
-                      {t('dashboard.connectDevice')}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-dark-50/30">
-                      {subscription.device_limit === 0
-                        ? t('dashboard.devicesConnectedUnlimited', { used: connectedDevices })
-                        : t('dashboard.devicesOfMax', {
-                            used: connectedDevices,
-                            max: subscription.device_limit,
-                          })}
-                    </div>
-                    {isAtDeviceLimit && (
-                      <div
-                        className="mt-1 text-[10px] font-medium"
-                        style={{ color: 'rgb(var(--color-warning-400))' }}
-                      >
-                        {t('dashboard.deviceLimitReached')}
-                      </div>
-                    )}
-                  </div>
-                  {subscription.device_limit === 0 ? (
-                    <div
-                      className="flex flex-shrink-0 items-center text-lg text-dark-50/40"
-                      aria-hidden="true"
-                    >
-                      ∞
-                    </div>
-                  ) : subscription.device_limit <= 10 ? (
-                    <div className="flex flex-shrink-0 gap-1.5" aria-hidden="true">
-                      {Array.from({ length: subscription.device_limit }, (_, i) => (
-                        <div
-                          key={i}
-                          className="h-[7px] w-[7px] rounded-full transition-[background-color,box-shadow] duration-300"
-                          style={{
-                            background: i < connectedDevices ? zone.mainHex : g.textGhost,
-                            boxShadow: i < connectedDevices ? `0 0 6px ${zone.mainHex}50` : 'none',
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex w-16 flex-shrink-0 items-center" aria-hidden="true">
-                      <div
-                        className="h-[6px] w-full overflow-hidden rounded-full"
-                        style={{ background: g.textGhost }}
-                      >
-                        {/* scaleX (compositor) instead of width (layout-thrash).
-                            Track is 64px (w-16), so 0.0625 floor = 4px minimum,
-                            preserving the prior minWidth behaviour. */}
-                        <div
-                          className="h-full w-full origin-left rounded-full transition-transform duration-500"
-                          style={{
-                            transform: `scaleX(${(() => {
-                              const pct = connectedDevices / subscription.device_limit;
-                              return connectedDevices > 0 ? Math.max(pct, 0.0625) : 0;
-                            })()})`,
-                            background: zone.mainHex,
-                            boxShadow: `0 0 8px ${zone.mainHex}40`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </HoverBorderGradient>
-              )}
-
-              {/* ─── Subscription URL ─── */}
-              {displayedConnectionUrl && !shouldHideConnectionLink && (
-                <div className="mb-5 flex gap-2">
-                  <code
-                    className="block min-w-0 flex-1 truncate whitespace-nowrap rounded-[10px] px-3 py-2 font-mono text-[11px] text-dark-50/30"
+                    className="mb-6 rounded-[14px] p-4"
                     style={{
-                      background: g.codeBg,
-                      border: `1px solid ${g.codeBorder}`,
+                      background:
+                        'linear-gradient(135deg, rgba(var(--color-accent-400), 0.08), rgba(var(--color-accent-400), 0.03))',
+                      border: '1px solid rgba(var(--color-accent-400), 0.12)',
                     }}
-                    title={displayedConnectionUrl}
                   >
-                    {displayedConnectionUrl}
-                  </code>
-                  <button
-                    onClick={copyUrl}
-                    className="flex h-auto items-center rounded-[10px] px-3 transition-colors duration-300"
-                    style={{
-                      background: copied ? 'rgba(var(--color-accent-400), 0.12)' : g.innerBorder,
-                      border: copied
-                        ? '1px solid rgba(var(--color-accent-400), 0.2)'
-                        : `1px solid ${g.trackBg}`,
-                      color: copied ? 'rgb(var(--color-accent-400))' : g.textMuted,
-                    }}
-                    aria-label={t('subscription.copyLink')}
-                    title={t('subscription.copyLink')}
-                  >
-                    {copied ? <CheckIcon /> : <CopyIcon />}
-                  </button>
-                </div>
-              )}
-
-              {/* ─── Countdown ─── */}
-              <div className="mb-5">
-                <CountdownTimer
-                  endDate={subscription.end_date}
-                  isActive={subscription.is_active || subscription.is_limited}
-                  glassColors={g}
-                />
-              </div>
-
-              {/* ─── Locations ─── */}
-              {subscription.servers && subscription.servers.length > 0 && (
-                <div className="mb-5">
-                  <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-dark-50/35">
-                    {t('subscription.locationsLabel')}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {subscription.servers.map((server) => (
-                      <span
-                        key={server.uuid}
-                        className="inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[11px] font-medium text-dark-50/50"
-                        style={{
-                          background: g.innerBorder,
-                          border: `1px solid ${g.trackBg}`,
-                        }}
-                      >
-                        {server.country_code && (
-                          <span className="text-xs">{getFlagEmoji(server.country_code)}</span>
-                        )}
-                        <Twemoji options={{ className: 'twemoji', folder: 'svg', ext: '.svg' }}>
-                          {server.name}
-                        </Twemoji>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ─── Purchased Traffic Packages ─── */}
-              {subscription.traffic_purchases && subscription.traffic_purchases.length > 0 && (
-                <div className="mb-5">
-                  <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-dark-50/35">
-                    {t('subscription.purchasedTraffic')}
-                  </div>
-                  <div className="space-y-2">
-                    {subscription.traffic_purchases.map((purchase) => (
+                    <div className="flex items-start gap-3">
                       <div
-                        key={purchase.id}
-                        className="rounded-[12px] p-3"
-                        style={{
-                          background: g.innerBg,
-                          border: `1px solid ${g.innerBorder}`,
-                        }}
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
+                        style={{ background: 'rgba(var(--color-accent-400), 0.12)' }}
                       >
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                              style={{ background: `${zone.mainHex}12`, color: zone.mainHex }}
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="rgb(var(--color-accent-400))"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <div
+                          className="text-sm font-semibold"
+                          style={{ color: 'rgb(var(--color-accent-400))' }}
+                        >
+                          {t('subscription.trialInfo.title')}
+                        </div>
+                        <div className="mt-1 text-[12px] text-dark-50/40">
+                          {t('subscription.trialInfo.description')}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-4">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="font-mono text-[12px] font-semibold"
+                              style={{ color: 'rgb(var(--color-accent-400))' }}
                             >
-                              <DownloadIcon className="h-3.5 w-3.5" />
-                            </div>
-                            <span className="text-sm font-semibold text-dark-50">
-                              {purchase.traffic_gb} {t('common.units.gb')}
+                              {subscription.days_left > 0
+                                ? t('subscription.days', { count: subscription.days_left })
+                                : `${subscription.hours_left}${t('subscription.hours')} ${subscription.minutes_left}${t('subscription.minutes')}`}
+                            </span>
+                            <span className="text-[11px] text-dark-50/30">
+                              {t('subscription.trialInfo.remaining')}
                             </span>
                           </div>
-                          <div className="text-right">
-                            <div
-                              className="text-[11px] font-medium"
-                              style={{
-                                color: purchase.days_remaining === 0 ? '#FF6B35' : g.textSecondary,
-                              }}
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="font-mono text-[12px] font-semibold"
+                              style={{ color: 'rgb(var(--color-accent-400))' }}
                             >
-                              {purchase.days_remaining === 0
-                                ? t('subscription.expired')
-                                : t('subscription.days', { count: purchase.days_remaining })}
-                            </div>
-                            <div className="mt-0.5 font-mono text-[9px] text-dark-50/20">
-                              {t('subscription.trafficResetAt')}:{' '}
-                              {new Date(purchase.expires_at).toLocaleDateString(uiLocale(), {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                              })}
-                            </div>
+                              {subscription.traffic_limit_gb || '∞'} {t('common.units.gb')}
+                            </span>
+                            <span className="text-[11px] text-dark-50/30">
+                              {t('subscription.traffic')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="font-mono text-[12px] font-semibold"
+                              style={{ color: 'rgb(var(--color-accent-400))' }}
+                            >
+                              {subscription.device_limit === 0 ? '∞' : subscription.device_limit}
+                            </span>
+                            <span className="text-[11px] text-dark-50/30">
+                              {t('subscription.devices')}
+                            </span>
                           </div>
                         </div>
-                        <div
-                          className="relative h-1.5 overflow-hidden rounded-full"
-                          style={{ background: g.trackBg }}
-                        >
-                          <div
-                            className="absolute inset-0 origin-left rounded-full bg-accent-500 transition-transform duration-500"
-                            style={{
-                              transform: `scaleX(${purchase.progress_percent / 100})`,
-                            }}
-                          />
-                        </div>
-                        <div className="mt-1 flex justify-between font-mono text-[9px] text-dark-50/20">
-                          <span>
-                            {new Date(purchase.created_at).toLocaleDateString(uiLocale())}
-                          </span>
-                          <span>
-                            {new Date(purchase.expires_at).toLocaleDateString(uiLocale())}
-                          </span>
-                        </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* ─── Autopay Toggle ─── */}
-              {!subscription.is_trial && !subscription.is_daily && (
-                <div
-                  className="flex items-center justify-between rounded-[14px] p-3.5"
-                  style={{
-                    background: g.innerBg,
-                    border: `1px solid ${g.innerBorder}`,
-                  }}
-                >
-                  <div>
-                    <div className="text-sm font-semibold text-dark-50">
-                      {t('subscription.autoRenewal')}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-dark-50/30">
-                      {t('subscription.daysBeforeExpiry', {
-                        count: subscription.autopay_days_before,
-                      })}
+                {/* ─── Traffic Progress ─── */}
+                <div className="mb-6">
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-dark-50/40">
+                      {t('subscription.traffic')}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] text-dark-50/30">
+                        {isUnlimited
+                          ? formatTraffic(usedGb)
+                          : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
+                      </span>
+                      <button
+                        onClick={() => refreshTrafficMutation.mutate()}
+                        disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
+                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-dark-50/30 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <RefreshIcon
+                          className="h-3 w-3"
+                          spinning={refreshTrafficMutation.isPending}
+                        />
+                        {trafficRefreshCooldown > 0
+                          ? `${trafficRefreshCooldown}s`
+                          : t('common.refresh')}
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => autopayMutation.mutate(!subscription.autopay_enabled)}
-                    disabled={autopayMutation.isPending}
-                    role="switch"
-                    aria-checked={subscription.autopay_enabled}
-                    aria-label={t('subscription.autopay', 'Auto-payment')}
-                    className="relative h-7 w-[52px] rounded-full transition-colors duration-300"
-                    style={{
-                      background: subscription.autopay_enabled ? zone.mainHex : g.textGhost,
-                    }}
+                  {subscription.traffic_reset_mode &&
+                    subscription.traffic_reset_mode !== 'NO_RESET' && (
+                      <div className="mb-2 text-[10px] text-dark-50/25">
+                        {t(`subscription.trafficReset.${subscription.traffic_reset_mode}`)}
+                      </div>
+                    )}
+                  <div
+                    className="h-4 overflow-hidden rounded-[10px_12px_9px_11px] border-2 border-dark-100 bg-dark-800"
+                    aria-hidden="true"
                   >
-                    {/* translateX (compositor) instead of left (layout-thrash).
-                        Resting position pinned at left:3px; on toggles a 23px
-                        slide on the GPU. */}
-                    <span
-                      className="absolute left-[3px] top-[3px] h-[22px] w-[22px] rounded-full bg-white transition-transform duration-300"
+                    <div
+                      className="h-full bg-[repeating-linear-gradient(-45deg,rgb(var(--color-accent-500))_0_3px,transparent_3px_7px)] transition-[width] duration-700"
                       style={{
-                        transform: subscription.autopay_enabled
-                          ? 'translateX(23px)'
-                          : 'translateX(0)',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        width: `${isUnlimited ? 0 : Math.max(2, Math.min(100, usedPercent))}%`,
                       }}
                     />
-                  </button>
+                  </div>
                 </div>
-              )}
 
-              {/* ─── SBP Recurring Auto-payment ───
+                {/* ─── Subscription URL ─── */}
+                {displayedConnectionUrl && !shouldHideConnectionLink && (
+                  <div className="mb-5 flex gap-2">
+                    <code
+                      className="block min-w-0 flex-1 truncate whitespace-nowrap rounded-[10px] border-[1.5px] border-dashed border-dark-700 px-3 py-3 font-mono text-sm text-dark-400"
+                      title={displayedConnectionUrl}
+                    >
+                      {displayedConnectionUrl}
+                    </code>
+                    <button
+                      onClick={copyUrl}
+                      className={cn(
+                        'flex h-auto items-center rounded-[10px] border-2 border-accent-500 px-3 text-accent-500 transition-colors duration-300',
+                        copied && 'bg-marker',
+                      )}
+                      aria-label={t('subscription.copyLink')}
+                      title={t('subscription.copyLink')}
+                    >
+                      {copied ? <CheckIcon /> : <CopyIcon />}
+                    </button>
+                  </div>
+                )}
+
+                {/* ─── Locations ─── */}
+                {subscription.servers && subscription.servers.length > 0 && (
+                  <div className="mb-5">
+                    <div className="napkin-label mb-2">{t('subscription.locationsLabel')}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {subscription.servers.map((server) => (
+                        <span
+                          key={server.uuid}
+                          className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-dark-700 px-3 py-1 text-sm text-dark-200"
+                        >
+                          {server.country_code && (
+                            <span className="text-xs">{getFlagEmoji(server.country_code)}</span>
+                          )}
+                          <Twemoji options={{ className: 'twemoji', folder: 'svg', ext: '.svg' }}>
+                            {server.name}
+                          </Twemoji>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── Purchased Traffic Packages ─── */}
+                {subscription.traffic_purchases && subscription.traffic_purchases.length > 0 && (
+                  <div className="mb-5">
+                    <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-dark-50/35">
+                      {t('subscription.purchasedTraffic')}
+                    </div>
+                    <div className="space-y-2">
+                      {subscription.traffic_purchases.map((purchase) => (
+                        <div
+                          key={purchase.id}
+                          className="rounded-[12px] p-3"
+                          style={{
+                            background: g.innerBg,
+                            border: `1px solid ${g.innerBorder}`,
+                          }}
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="flex h-7 w-7 items-center justify-center rounded-[8px]"
+                                style={{ background: `${zone.mainHex}12`, color: zone.mainHex }}
+                              >
+                                <DownloadIcon className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="text-sm font-semibold text-dark-50">
+                                {purchase.traffic_gb} {t('common.units.gb')}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <div
+                                className="text-[11px] font-medium"
+                                style={{
+                                  color:
+                                    purchase.days_remaining === 0 ? '#FF6B35' : g.textSecondary,
+                                }}
+                              >
+                                {purchase.days_remaining === 0
+                                  ? t('subscription.expired')
+                                  : t('subscription.days', { count: purchase.days_remaining })}
+                              </div>
+                              <div className="mt-0.5 font-mono text-[9px] text-dark-50/20">
+                                {t('subscription.trafficResetAt')}:{' '}
+                                {new Date(purchase.expires_at).toLocaleDateString(uiLocale(), {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          <div
+                            className="relative h-1.5 overflow-hidden rounded-full"
+                            style={{ background: g.trackBg }}
+                          >
+                            <div
+                              className="absolute inset-0 origin-left rounded-full bg-accent-500 transition-transform duration-500"
+                              style={{
+                                transform: `scaleX(${purchase.progress_percent / 100})`,
+                              }}
+                            />
+                          </div>
+                          <div className="mt-1 flex justify-between font-mono text-[9px] text-dark-50/20">
+                            <span>
+                              {new Date(purchase.created_at).toLocaleDateString(uiLocale())}
+                            </span>
+                            <span>
+                              {new Date(purchase.expires_at).toLocaleDateString(uiLocale())}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── Autopay Toggle ─── */}
+                {!subscription.is_trial && !subscription.is_daily && (
+                  <div className="flex items-center justify-between gap-4 border-y-[1.5px] border-dashed border-dark-700 py-3.5">
+                    <div>
+                      <div className="text-base font-semibold text-dark-50">
+                        {t('subscription.autoRenewal')}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-dark-50/30">
+                        {t('subscription.daysBeforeExpiry', {
+                          count: subscription.autopay_days_before,
+                        })}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => autopayMutation.mutate(!subscription.autopay_enabled)}
+                      disabled={autopayMutation.isPending}
+                      role="switch"
+                      aria-checked={subscription.autopay_enabled}
+                      aria-label={t('subscription.autopay', 'Auto-payment')}
+                      className={cn(
+                        'relative h-[34px] w-[60px] shrink-0 rounded-full border-2 border-dark-100 transition-colors duration-300',
+                        subscription.autopay_enabled ? 'bg-marker' : 'bg-dark-800',
+                      )}
+                    >
+                      {/* translateX (compositor) instead of left (layout-thrash).
+                        Resting position pinned at left:3px; on toggles a 23px
+                        slide on the GPU. */}
+                      <span
+                        className={cn(
+                          'absolute left-[3px] top-[3px] h-6 w-6 rounded-full transition-transform duration-300',
+                          subscription.autopay_enabled ? 'bg-accent-500' : 'bg-dark-100',
+                        )}
+                        style={{
+                          transform: subscription.autopay_enabled
+                            ? 'translateX(26px)'
+                            : 'translateX(0)',
+                        }}
+                      />
+                    </button>
+                  </div>
+                )}
+
+                {/* ─── SBP Recurring Auto-payment ───
                    Sibling of the autopay toggle above, guarded ONLY by
                    is_trial + uiState — daily-tariff subscriptions must see
                    this block too (backend supports a day-interval charge). */}
-              {!subscription.is_trial && sbpUiStateValue !== 'hidden' && (
-                <div
-                  className="mt-3 rounded-[14px] p-3.5"
-                  style={{
-                    background: g.innerBg,
-                    border: `1px solid ${g.innerBorder}`,
-                  }}
-                >
-                  {/* Заголовок и статус слева, компактное действие справа —
+                {!subscription.is_trial && sbpUiStateValue !== 'hidden' && (
+                  <div
+                    className="mt-3 rounded-[14px] p-3.5"
+                    style={{
+                      background: g.innerBg,
+                      border: `1px solid ${g.innerBorder}`,
+                    }}
+                  >
+                    {/* Заголовок и статус слева, компактное действие справа —
                       зеркально соседнему тогглу «Автопродление». На мобиле
                       кнопка падает вниз на всю ширину (w-full sm:w-auto). */}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-dark-50">
-                        {t('subscription.sbpRecurring.title')}
-                      </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-dark-50">
+                          {t('subscription.sbpRecurring.title')}
+                        </div>
 
-                      {sbpUiStateValue === 'off' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.sbpRecurring.autopayHint')}
-                        </div>
-                      )}
-                      {sbpUiStateValue === 'pending' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.sbpRecurring.statusPending')}
-                        </div>
-                      )}
-                      {sbpUiStateValue === 'active' && sbpInfo && (
-                        <>
+                        {sbpUiStateValue === 'off' && (
                           <div className="mt-0.5 text-[11px] text-dark-50/30">
-                            {t('subscription.sbpRecurring.amountPerInterval', {
-                              amount: formatAmount((sbpInfo.amount_kopeks ?? 0) / 100),
-                              interval: t(sbpIntervalLabelKey(sbpInfo.interval)),
-                            })}
+                            {t('subscription.sbpRecurring.autopayHint')}
                           </div>
-                          {sbpInfo.next_charge_at && (
+                        )}
+                        {sbpUiStateValue === 'pending' && (
+                          <div className="mt-0.5 text-[11px] text-dark-50/30">
+                            {t('subscription.sbpRecurring.statusPending')}
+                          </div>
+                        )}
+                        {sbpUiStateValue === 'active' && sbpInfo && (
+                          <>
                             <div className="mt-0.5 text-[11px] text-dark-50/30">
-                              {t('subscription.sbpRecurring.nextCharge', {
-                                date: new Date(sbpInfo.next_charge_at).toLocaleDateString(
-                                  uiLocale(),
-                                  {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                  },
-                                ),
+                              {t('subscription.sbpRecurring.amountPerInterval', {
+                                amount: formatAmount((sbpInfo.amount_kopeks ?? 0) / 100),
+                                interval: t(sbpIntervalLabelKey(sbpInfo.interval)),
                               })}
                             </div>
-                          )}
-                        </>
-                      )}
-                      {sbpUiStateValue === 'past_due' && (
-                        <div className="mt-0.5 text-[11px] font-medium text-warning-400">
-                          {t('subscription.sbpRecurring.statusPastDue')}
-                        </div>
-                      )}
-                    </div>
+                            {sbpInfo.next_charge_at && (
+                              <div className="mt-0.5 text-[11px] text-dark-50/30">
+                                {t('subscription.sbpRecurring.nextCharge', {
+                                  date: new Date(sbpInfo.next_charge_at).toLocaleDateString(
+                                    uiLocale(),
+                                    {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                    },
+                                  ),
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {sbpUiStateValue === 'past_due' && (
+                          <div className="mt-0.5 text-[11px] font-medium text-warning-400">
+                            {t('subscription.sbpRecurring.statusPastDue')}
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-                      {sbpUiStateValue === 'off' && (
-                        <button
-                          onClick={() => enableSbpMutation.mutate()}
-                          disabled={enableSbpMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
-                        >
-                          {enableSbpMutation.isPending ? (
-                            <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            t('subscription.sbpRecurring.connect')
-                          )}
-                        </button>
-                      )}
+                      <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                        {sbpUiStateValue === 'off' && (
+                          <button
+                            onClick={() => enableSbpMutation.mutate()}
+                            disabled={enableSbpMutation.isPending}
+                            className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
+                          >
+                            {enableSbpMutation.isPending ? (
+                              <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                              t('subscription.sbpRecurring.connect')
+                            )}
+                          </button>
+                        )}
 
-                      {sbpUiStateValue === 'pending' && (
-                        <>
-                          {sbpInfo?.redirect_url && (
+                        {sbpUiStateValue === 'pending' && (
+                          <>
+                            {sbpInfo?.redirect_url && (
+                              <button
+                                onClick={() => {
+                                  if (sbpInfo.redirect_url) {
+                                    openPaymentUrl(sbpInfo.redirect_url, platform, openLink);
+                                  }
+                                }}
+                                className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              >
+                                {t('subscription.sbpRecurring.confirmInBank')}
+                              </button>
+                            )}
                             <button
-                              onClick={() => {
-                                if (sbpInfo.redirect_url) {
-                                  openPaymentUrl(sbpInfo.redirect_url, platform, openLink);
-                                }
-                              }}
-                              className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              onClick={handleCancelSbp}
+                              disabled={cancelSbpMutation.isPending}
+                              className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
+                              style={{ color: 'rgb(var(--color-critical-500))' }}
                             >
-                              {t('subscription.sbpRecurring.confirmInBank')}
+                              {t('subscription.sbpRecurring.cancel')}
                             </button>
-                          )}
+                          </>
+                        )}
+
+                        {(sbpUiStateValue === 'active' || sbpUiStateValue === 'past_due') && (
                           <button
                             onClick={handleCancelSbp}
                             disabled={cancelSbpMutation.isPending}
-                            className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
-                            style={{ color: 'rgb(var(--color-critical-500))' }}
+                            className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
                           >
                             {t('subscription.sbpRecurring.cancel')}
                           </button>
-                        </>
-                      )}
-
-                      {(sbpUiStateValue === 'active' || sbpUiStateValue === 'past_due') && (
-                        <button
-                          onClick={handleCancelSbp}
-                          disabled={cancelSbpMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
-                        >
-                          {t('subscription.sbpRecurring.cancel')}
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* ─── Автопродление Lava ───
+                {/* ─── Автопродление Lava ───
                    Независимый от Platega движок: сиблинг того же тоггла, те же
                    состояния. Период задан продуктом в кабинете Lava и приезжает
                    числом дней, поэтому подпись строится из charge_days. */}
-              {!subscription.is_trial && lavaUiStateValue !== 'hidden' && (
-                <div
-                  className="mt-3 rounded-[14px] p-3.5"
-                  style={{
-                    background: g.innerBg,
-                    border: `1px solid ${g.innerBorder}`,
-                  }}
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-dark-50">
-                        {t('subscription.lavaRecurring.title')}
+                {!subscription.is_trial && lavaUiStateValue !== 'hidden' && (
+                  <div
+                    className="mt-3 rounded-[14px] p-3.5"
+                    style={{
+                      background: g.innerBg,
+                      border: `1px solid ${g.innerBorder}`,
+                    }}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-dark-50">
+                          {t('subscription.lavaRecurring.title')}
+                        </div>
+
+                        {lavaUiStateValue === 'off' && (
+                          <div className="mt-0.5 text-[11px] text-dark-50/30">
+                            {t('subscription.lavaRecurring.autopayHint')}
+                          </div>
+                        )}
+                        {lavaUiStateValue === 'pending' && (
+                          <div className="mt-0.5 text-[11px] text-dark-50/30">
+                            {t('subscription.lavaRecurring.statusPending')}
+                          </div>
+                        )}
+                        {lavaUiStateValue === 'active' && lavaInfo && (
+                          <>
+                            <div className="mt-0.5 text-[11px] text-dark-50/30">
+                              {(() => {
+                                const periodKey = lavaPeriodLabelKey(lavaInfo.charge_days);
+                                const amount = formatAmount((lavaInfo.amount_kopeks ?? 0) / 100);
+                                return periodKey
+                                  ? t('subscription.lavaRecurring.amountPerPeriod', {
+                                      amount,
+                                      period: t(periodKey),
+                                    })
+                                  : t('subscription.lavaRecurring.amountPerDays', {
+                                      amount,
+                                      days: lavaInfo.charge_days ?? 0,
+                                    });
+                              })()}
+                            </div>
+                            {lavaInfo.next_charge_at && (
+                              <div className="mt-0.5 text-[11px] text-dark-50/30">
+                                {t('subscription.lavaRecurring.nextCharge', {
+                                  date: new Date(lavaInfo.next_charge_at).toLocaleDateString(
+                                    uiLocale(),
+                                    {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                    },
+                                  ),
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {lavaUiStateValue === 'past_due' && (
+                          <div className="mt-0.5 text-[11px] font-medium text-warning-400">
+                            {t('subscription.lavaRecurring.statusPastDue')}
+                          </div>
+                        )}
                       </div>
 
-                      {lavaUiStateValue === 'off' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.lavaRecurring.autopayHint')}
-                        </div>
-                      )}
-                      {lavaUiStateValue === 'pending' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.lavaRecurring.statusPending')}
-                        </div>
-                      )}
-                      {lavaUiStateValue === 'active' && lavaInfo && (
-                        <>
-                          <div className="mt-0.5 text-[11px] text-dark-50/30">
-                            {(() => {
-                              const periodKey = lavaPeriodLabelKey(lavaInfo.charge_days);
-                              const amount = formatAmount((lavaInfo.amount_kopeks ?? 0) / 100);
-                              return periodKey
-                                ? t('subscription.lavaRecurring.amountPerPeriod', {
-                                    amount,
-                                    period: t(periodKey),
-                                  })
-                                : t('subscription.lavaRecurring.amountPerDays', {
-                                    amount,
-                                    days: lavaInfo.charge_days ?? 0,
-                                  });
-                            })()}
-                          </div>
-                          {lavaInfo.next_charge_at && (
-                            <div className="mt-0.5 text-[11px] text-dark-50/30">
-                              {t('subscription.lavaRecurring.nextCharge', {
-                                date: new Date(lavaInfo.next_charge_at).toLocaleDateString(
-                                  uiLocale(),
-                                  {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                  },
-                                ),
-                              })}
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {lavaUiStateValue === 'past_due' && (
-                        <div className="mt-0.5 text-[11px] font-medium text-warning-400">
-                          {t('subscription.lavaRecurring.statusPastDue')}
-                        </div>
-                      )}
-                    </div>
+                      <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                        {lavaUiStateValue === 'off' && (
+                          <button
+                            onClick={() => enableLavaMutation.mutate()}
+                            disabled={enableLavaMutation.isPending}
+                            className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
+                          >
+                            {enableLavaMutation.isPending ? (
+                              <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                              t('subscription.lavaRecurring.connect')
+                            )}
+                          </button>
+                        )}
 
-                    <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-                      {lavaUiStateValue === 'off' && (
-                        <button
-                          onClick={() => enableLavaMutation.mutate()}
-                          disabled={enableLavaMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
-                        >
-                          {enableLavaMutation.isPending ? (
-                            <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            t('subscription.lavaRecurring.connect')
-                          )}
-                        </button>
-                      )}
-
-                      {lavaUiStateValue === 'pending' && (
-                        <>
-                          {lavaInfo?.redirect_url && (
+                        {lavaUiStateValue === 'pending' && (
+                          <>
+                            {lavaInfo?.redirect_url && (
+                              <button
+                                onClick={() => {
+                                  if (lavaInfo.redirect_url) {
+                                    openPaymentUrl(lavaInfo.redirect_url, platform, openLink);
+                                  }
+                                }}
+                                className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              >
+                                {t('subscription.lavaRecurring.payFirst')}
+                              </button>
+                            )}
                             <button
-                              onClick={() => {
-                                if (lavaInfo.redirect_url) {
-                                  openPaymentUrl(lavaInfo.redirect_url, platform, openLink);
-                                }
-                              }}
-                              className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              onClick={handleCancelLava}
+                              disabled={cancelLavaMutation.isPending}
+                              className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
+                              style={{ color: 'rgb(var(--color-critical-500))' }}
                             >
-                              {t('subscription.lavaRecurring.payFirst')}
+                              {t('subscription.lavaRecurring.cancel')}
                             </button>
-                          )}
+                          </>
+                        )}
+
+                        {(lavaUiStateValue === 'active' || lavaUiStateValue === 'past_due') && (
                           <button
                             onClick={handleCancelLava}
                             disabled={cancelLavaMutation.isPending}
-                            className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
-                            style={{ color: 'rgb(var(--color-critical-500))' }}
+                            className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
                           >
                             {t('subscription.lavaRecurring.cancel')}
                           </button>
-                        </>
-                      )}
-
-                      {(lavaUiStateValue === 'active' || lavaUiStateValue === 'past_due') && (
-                        <button
-                          onClick={handleCancelLava}
-                          disabled={cancelLavaMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
-                        >
-                          {t('subscription.lavaRecurring.cancel')}
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+              </div>
+
+              {/* ─── Подключить устройство ─── */}
+              {subscription.subscription_url && (
+                <button
+                  type="button"
+                  className="napkin-btn"
+                  disabled={isAtDeviceLimit}
+                  onClick={() =>
+                    navigate(subscriptionId ? `/connection?sub=${subscriptionId}` : '/connection')
+                  }
+                >
+                  {isAtDeviceLimit
+                    ? t('subscription.napkin.noSlots', {
+                        used: connectedDevices,
+                        max: subscription.device_limit,
+                      })
+                    : subscription.device_limit === 0
+                      ? t('subscription.napkin.connectUnlimited', { used: connectedDevices })
+                      : t('subscription.napkin.connect', {
+                          used: connectedDevices,
+                          max: subscription.device_limit,
+                        })}
+                </button>
               )}
-            </div>
+            </>
           );
         })()
       ) : (
@@ -1752,18 +1511,8 @@ export default function Subscription() {
         (subscription.is_active || subscription.is_limited) &&
         !subscription.is_trial &&
         subscription.device_limit !== 0 && (
-          <div
-            className="relative overflow-hidden rounded-3xl"
-            style={{
-              background: g.cardBg,
-              border: `1px solid ${g.cardBorder}`,
-              boxShadow: g.shadow,
-              padding: '24px 28px',
-            }}
-          >
-            <h2 className="mb-4 text-base font-bold tracking-tight text-dark-50">
-              {t('subscription.additionalOptions.title')}
-            </h2>
+          <section>
+            <h2 className="napkin-label mb-3">{t('subscription.napkin.change')}</h2>
 
             {/* Buy Devices */}
             <DeviceTopupSheet
@@ -1779,7 +1528,7 @@ export default function Subscription() {
             />
 
             {/* Reduce Devices */}
-            <div className="mt-4">
+            <div>
               <DeviceReductionSheet
                 open={showDeviceReduction}
                 onOpen={() => setShowDeviceReduction(true)}
@@ -1794,7 +1543,7 @@ export default function Subscription() {
 
             {/* Buy Traffic */}
             {subscription.traffic_limit_gb > 0 && (
-              <div className="mt-4">
+              <div>
                 <TrafficTopupSheet
                   open={showTrafficTopup}
                   onOpen={() => setShowTrafficTopup(true)}
@@ -1811,7 +1560,7 @@ export default function Subscription() {
 
             {/* Server Management - only in classic mode */}
             {!isTariffsMode && (
-              <div className="mt-4">
+              <div>
                 <ServerManagementSheet
                   open={showServerManagement}
                   onOpen={() => setShowServerManagement(true)}
@@ -1825,24 +1574,14 @@ export default function Subscription() {
                 />
               </div>
             )}
-          </div>
+          </section>
         )}
 
       {/* My Devices Section */}
       {subscription && (
-        <div
-          className="relative overflow-hidden rounded-3xl"
-          style={{
-            background: g.cardBg,
-            border: `1px solid ${g.cardBorder}`,
-            boxShadow: g.shadow,
-            padding: '24px 28px',
-          }}
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-bold tracking-tight text-dark-50">
-              {t('subscription.myDevices')}
-            </h2>
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="napkin-label">{t('subscription.napkin.devices')}</h2>
             {devicesData && devicesData.devices.length > 0 && (
               <button
                 onClick={async () => {
@@ -2085,11 +1824,9 @@ export default function Subscription() {
               })}
             </div>
           ) : (
-            <div className="py-8 text-center text-[12px] text-dark-50/25">
-              {t('subscription.noDevices')}
-            </div>
+            <div className="py-4 text-base text-dark-400">{t('subscription.noDevices')}</div>
           )}
-        </div>
+        </section>
       )}
     </div>
   );

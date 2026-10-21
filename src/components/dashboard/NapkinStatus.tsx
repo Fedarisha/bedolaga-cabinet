@@ -84,7 +84,14 @@ function Headline({ ok, children }: { ok: boolean; children: string }) {
   );
 }
 
-function SubscriptionRow({ item }: { item: NapkinSubscription }) {
+/** Строка подписки: название, тариф и устройства, справа срок или пометка маркером. */
+export function SubscriptionRow({
+  item,
+  big = false,
+}: {
+  item: NapkinSubscription;
+  big?: boolean;
+}) {
   const { t } = useTranslation();
   const { sub, usedDevices } = item;
   const state = stateOf(sub);
@@ -118,10 +125,17 @@ function SubscriptionRow({ item }: { item: NapkinSubscription }) {
   return (
     <Link
       to={`/subscriptions/${sub.id}`}
-      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 rounded-lg px-0.5 py-3 transition-colors hover:bg-dark-900"
+      className={cn(
+        'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 rounded-lg px-0.5 transition-colors hover:bg-dark-900',
+        big ? 'py-4' : 'py-3',
+      )}
     >
       <span className="min-w-0">
-        <strong className="block truncate text-lg font-semibold text-dark-100">{title}</strong>
+        <strong
+          className={cn('block truncate font-semibold text-dark-100', big ? 'text-xl' : 'text-lg')}
+        >
+          {title}
+        </strong>
         <small className="block text-sm text-dark-400">
           {[sub.name ? sub.tariff_name : null, devices].filter(Boolean).join(' · ')}
         </small>

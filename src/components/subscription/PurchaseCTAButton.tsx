@@ -1,7 +1,5 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { HoverBorderGradient } from '../ui/hover-border-gradient';
-import { ChevronRightIcon, SubscriptionIcon } from '@/components/icons';
 import type { Subscription } from '../../types';
 import { needsTariff, tariffSelectionPath } from '../../utils/legacySubscription';
 
@@ -27,8 +25,6 @@ export default function PurchaseCTAButton({
 
   // Daily tariffs renew automatically — no manual renewal button needed in multi-tariff
   if (isMultiTariff && isDaily && !isExpired) return null;
-
-  const accentColor = isExpired ? 'rgb(var(--color-critical-500))' : 'rgb(var(--color-accent-400))';
 
   const buttonText = requiresTariff
     ? t('subscription.cta.moveToTariff')
@@ -61,45 +57,10 @@ export default function PurchaseCTAButton({
           ? `/subscriptions/${subscription.id}/renew`
           : '/subscription/purchase';
 
+  // Истёкшая подписка — главное действие экрана (чернила), у живой — обводка.
   return (
-    <Link to={linkTo} className="block">
-      <HoverBorderGradient
-        accentColor={accentColor}
-        duration={4}
-        className="group relative w-full cursor-pointer overflow-hidden rounded-2xl"
-      >
-        <div
-          className="relative flex items-center justify-between rounded-[14px] px-5 py-4 transition-colors duration-300"
-          style={{
-            background: isExpired
-              ? 'linear-gradient(135deg, rgba(255,59,92,0.08), rgba(255,107,53,0.06))'
-              : 'linear-gradient(135deg, rgba(var(--color-accent-400), 0.08), rgba(var(--color-accent-400), 0.06))',
-          }}
-        >
-          {/* Left: icon + text */}
-          <div className="flex items-center gap-3">
-            {/* Sparkle icon */}
-            <div
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
-              style={{
-                background: isExpired
-                  ? 'rgba(255,59,92,0.12)'
-                  : 'rgba(var(--color-accent-400), 0.12)',
-                color: accentColor,
-              }}
-            >
-              <SubscriptionIcon className="h-[18px] w-[18px]" />
-            </div>
-            <div>
-              <div className="text-[15px] font-semibold text-dark-50">{buttonText}</div>
-              <div className="text-[12px] text-dark-400">{hintText}</div>
-            </div>
-          </div>
-
-          {/* Right: chevron */}
-          <ChevronRightIcon className="h-5 w-5 flex-shrink-0 text-dark-400 transition-transform duration-300 group-hover:translate-x-1" />
-        </div>
-      </HoverBorderGradient>
+    <Link to={linkTo} className={isExpired ? 'napkin-btn' : 'napkin-btn-line'} title={hintText}>
+      {buttonText}
     </Link>
   );
 }
