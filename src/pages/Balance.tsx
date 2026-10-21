@@ -212,13 +212,13 @@ export default function Balance() {
           decoration (DESIGN.md Tunable-but-Scarce Rule) and read as the
           SaaS hero-metric template. */}
       <motion.div variants={staggerItem}>
-        <Card>
-          <div className="mb-2 text-sm text-dark-400">{t('balance.currentBalance')}</div>
-          <div className="text-4xl font-bold text-dark-50 sm:text-5xl">
+        <div className="napkin napkin-tilt">
+          <div className="mb-2 text-base text-dark-400">{t('balance.currentBalance')}</div>
+          <div className="font-mono text-5xl font-bold tabular-nums tracking-tight text-dark-50">
             {formatAmount(balanceData?.balance_rubles || 0)}
-            <span className="ml-2 text-2xl text-dark-400">{currencySymbol}</span>
+            <span className="ml-2 text-3xl text-dark-400">{currencySymbol}</span>
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       {/* Promo Code Section */}
