@@ -61,6 +61,7 @@ export default function Login() {
     referralCode ? 'register' : 'login',
   );
   const [email, setEmail] = useState('');
+  const [emailStep, setEmailStep] = useState<'email' | 'password'>('email');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -379,238 +380,197 @@ export default function Login() {
     );
   }
 
+  // Брендовые кнопки входа: фирменные цвета Яндекс ID и VK ID, остальные — обводкой.
+  const providerButtonClass = (name: string) =>
+    name === 'yandex'
+      ? 'bg-black text-white'
+      : name === 'vk'
+        ? 'bg-[#0077ff] text-white'
+        : 'border-2 border-dark-100 text-dark-100';
+  const providerLabel = (name: string, displayName: string) =>
+    name === 'yandex'
+      ? t('auth.napkin.withYandex')
+      : name === 'vk'
+        ? t('auth.napkin.withVk')
+        : t('auth.napkin.withProvider', { provider: displayName });
+
+  // Вход по почте — по одному полю: сначала почта, потом пароль. Регистрация — вся форма сразу.
+  const handleMailForm = (e: React.FormEvent) => {
+    if (authMode === 'login' && emailStep === 'email') {
+      e.preventDefault();
+      if (!isValidEmail(email)) {
+        setError(t('auth.invalidEmail', 'Please enter a valid email address'));
+        return;
+      }
+      setError('');
+      setEmailStep('password');
+      return;
+    }
+    void handleEmailSubmit(e);
+  };
+
+  const legalLinks = (
+    <nav className="flex flex-wrap gap-x-4 gap-y-1">
+      <Link to="/support" className="transition-colors hover:text-dark-200">
+        {t('nav.support')}
+      </Link>
+      <Link to="/info?tab=rules" className="transition-colors hover:text-dark-200">
+        {t('info.rules')}
+      </Link>
+      <Link to="/info?tab=privacy" className="transition-colors hover:text-dark-200">
+        {t('info.privacy')}
+      </Link>
+      <Link to="/info?tab=offer" className="transition-colors hover:text-dark-200">
+        {t('info.offer')}
+      </Link>
+      <Link to="/info?tab=personal-data" className="transition-colors hover:text-dark-200">
+        {t('info.personalData')}
+      </Link>
+    </nav>
+  );
+
   return (
     <div
-      className="flex min-h-[100dvh] flex-col items-center justify-center px-4 sm:px-6 lg:px-8"
+      className="min-h-[100dvh] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
       style={{
         paddingTop:
           safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
         paddingBottom:
-          safeBottom > 0 ? `${safeBottom + 16}px` : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+          safeBottom > 0
+            ? `${safeBottom + 16}px`
+            : 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {/* Background gradient */}
-      <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
-
-      {/* Language switcher */}
-      <div
-        className="fixed right-3 z-50"
-        style={{
-          top: safeTop > 0 ? `${safeTop + 12}px` : 'calc(12px + env(safe-area-inset-top, 0px))',
-        }}
-      >
-        <LanguageSwitcher />
-      </div>
-
-      <div className="relative w-full max-w-md space-y-5">
+      <div className="relative mx-auto w-full max-w-[920px]">
         {/* Logo & branding */}
-        <div className="text-center">
-          <div className="relative mx-auto mb-3 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-dark-700/50 bg-dark-800/80 shadow-md">
-            {/* Letter fallback */}
+        <div className="flex items-center gap-2.5 py-1.5">
+          <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg">
             <span
-              className={`absolute text-lg font-bold text-accent-400 transition-opacity duration-200 ${branding?.has_custom_logo && logoLoaded ? 'opacity-0' : 'opacity-100'}`}
+              className={`absolute font-display text-base font-extrabold text-accent-500 transition-opacity duration-200 ${branding?.has_custom_logo && logoLoaded ? 'opacity-0' : 'opacity-100'}`}
             >
               {appLogo}
             </span>
-            {/* Logo image */}
             {branding?.has_custom_logo && logoUrl && (
               <img
                 src={logoUrl}
-                alt={appName || 'Logo'}
+                alt=""
                 className={`absolute h-full w-full object-contain transition-opacity duration-200 ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setLogoLoaded(true)}
               />
             )}
-          </div>
-          {appName && <h1 className="text-2xl font-bold text-dark-50">{appName}</h1>}
-
-          {/* Referral Banner */}
-          {referralCode && isEmailAuthEnabled && (
-            <div className="mt-3 rounded-xl border border-accent-500/30 bg-accent-500/10 p-2.5">
-              <div className="flex items-center justify-center gap-2 text-accent-400">
-                <svg
-                  className="h-4 w-4 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                  />
-                </svg>
-                <span className="text-xs font-medium">{t('auth.referralInvite')}</span>
-              </div>
-            </div>
+          </span>
+          {appName && (
+            <span className="font-display text-base font-extrabold tracking-wide text-dark-100">
+              {appName}
+            </span>
           )}
+          <div className="ml-auto">
+            <LanguageSwitcher />
+          </div>
         </div>
 
-        {/* Check Email Screen */}
+        <h1 className="mb-5 mt-7 text-4xl font-extrabold text-dark-50">
+          {registeredEmail
+            ? t('auth.checkEmail', 'Check your email')
+            : authMode === 'register'
+              ? t('auth.register', 'Register')
+              : t('auth.napkin.title')}
+        </h1>
+
+        {/* Referral Banner */}
+        {referralCode && isEmailAuthEnabled && !registeredEmail && (
+          <p className="hand -mt-2 mb-5 text-2xl">{t('auth.referralInvite')}</p>
+        )}
+
         {registeredEmail ? (
-          <div className="card text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-success-500/20">
-              <svg
-                className="h-7 w-7 text-success-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                />
-              </svg>
-            </div>
-            <h2 className="mb-2 text-lg font-bold text-dark-50">
-              {t('auth.checkEmail', 'Check your email')}
-            </h2>
-            <p className="mb-3 text-sm text-dark-400">
+          /* Check Email Screen */
+          <div className="napkin napkin-tilt max-w-md">
+            <p className="text-base text-dark-400">
               {t('auth.verificationSent', 'We sent a verification link to:')}
             </p>
-            <p className="mb-4 text-sm font-medium text-accent-400">{registeredEmail}</p>
-            <p className="mb-5 text-xs text-dark-500">
+            <p className="mt-1 text-lg font-semibold text-accent-500">{registeredEmail}</p>
+            <p className="mb-5 mt-3 text-base text-dark-400">
               {t(
                 'auth.clickLinkToVerify',
                 'Click the link in the email to verify your account and log in.',
               )}
             </p>
             <button
+              type="button"
               onClick={() => {
                 setRegisteredEmail(null);
                 setAuthMode('login');
+                setEmailStep('email');
               }}
-              className="btn-secondary w-full"
+              className="napkin-btn-line"
             >
               {t('auth.backToLogin', 'Back to login')}
             </button>
           </div>
         ) : (
-          /* Main auth card */
-          <div className="rounded-2xl border border-dark-700/80 bg-dark-900/95 p-5 shadow-2xl shadow-black/35 sm:p-6">
-            <div className="mb-5 text-center">
-              <h2 className="text-xl font-bold text-dark-50">{t('auth.loginTitle')}</h2>
-              <p className="mt-1 text-sm text-dark-400">{t('auth.loginSubtitle')}</p>
-            </div>
-
-            {error && (
-              <div className="mb-4 rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-2.5 text-sm text-error-400">
-                {error}
-              </div>
-            )}
-
-            {/* Legacy provider recovery */}
-            <div className="rounded-xl border border-warning-500/25 bg-warning-500/10">
-              <button
-                type="button"
-                onClick={handleLegacyRecoveryOpenToggle}
-                className="flex min-h-[48px] w-full items-center justify-between gap-3 px-3.5 py-3 text-left text-sm font-medium text-dark-100"
-                aria-expanded={isLegacyRecoveryOpen}
-              >
-                <span>{t('auth.legacyLoginQuestion', 'Входили через Google или Telegram?')}</span>
-                <svg
-                  className={`h-4 w-4 shrink-0 text-dark-300 transition-transform duration-200 ${
-                    isLegacyRecoveryOpen ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {isLegacyRecoveryOpen && (
-                <div className="space-y-3 border-t border-warning-500/20 px-3.5 pb-3.5 pt-1">
-                  <p className="text-xs leading-relaxed text-dark-400">
-                    {t(
-                      'auth.legacyLoginShortHint',
-                      'Эти способы входа больше не показываются. Мы поможем привязать старый аккаунт после входа другим способом.',
-                    )}
-                  </p>
-                  <div className="rounded-lg border border-dark-700/70 bg-dark-900/80 p-3 text-xs leading-relaxed text-dark-300">
-                    <p>
-                      {t('auth.legacyLoginLawNotice', {
-                        provider: 'Google или Telegram',
-                        defaultValue:
-                          'В связи с требованиями 199-ФЗ мы больше не можем использовать {{provider}} для входа. Войдите или зарегистрируйтесь любым доступным способом, затем на странице привязанных аккаунтов объедините новый вход со старым аккаунтом, чтобы не потерять подписки и баланс.',
-                      })}
-                    </p>
-                  </div>
-                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dark-700/60 bg-dark-900/80 p-3 text-xs text-dark-400">
-                    <input
-                      type="checkbox"
-                      checked={openAccountsAfterLogin}
-                      onChange={(event) => handleLegacyRecoveryToggle(event.target.checked)}
-                      className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-accent-500"
-                    />
-                    <span className="leading-relaxed">{t('auth.openAccountsAfterLogin')}</span>
-                  </label>
-                </div>
-              )}
-            </div>
-
-            {/* OAuth providers - compact icon row */}
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-12">
+            {/* OAuth providers */}
             {oauthProviders.length > 0 && (
-              <div className="mt-5">
-                <div className="grid grid-cols-2 gap-2.5">
-                  {oauthProviders.map((provider) => (
-                    <button
-                      key={provider.name}
-                      type="button"
-                      onClick={() => handleOAuthLogin(provider.name)}
-                      disabled={oauthLoading !== null}
-                      className="flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-xl border border-dark-600/80 bg-dark-800 px-3 text-sm font-semibold text-dark-100 shadow-sm transition-all hover:border-dark-500 hover:bg-dark-700 disabled:opacity-50"
-                      title={provider.display_name}
-                    >
-                      {oauthLoading === provider.name ? (
-                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-dark-400 border-t-white" />
-                      ) : (
-                        <OAuthProviderIcon provider={provider.name} className="h-6 w-6" />
-                      )}
-                      <span>{provider.display_name}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="my-4 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-dark-700/80" />
-                  <span className="text-xs font-medium text-dark-400">{t('auth.or', 'or')}</span>
-                  <div className="h-px flex-1 bg-dark-700/80" />
-                </div>
+              <div className="grid gap-3.5">
+                {oauthProviders.map((provider) => (
+                  <button
+                    key={provider.name}
+                    type="button"
+                    onClick={() => handleOAuthLogin(provider.name)}
+                    disabled={oauthLoading !== null}
+                    className={`flex min-h-[60px] w-full items-center justify-center gap-3 rounded-[14px] px-5 text-lg font-semibold transition-transform hover:-translate-y-0.5 disabled:opacity-50 ${providerButtonClass(provider.name)}`}
+                  >
+                    {oauthLoading === provider.name ? (
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    ) : provider.name === 'vk' ? (
+                      <svg viewBox="0 0 48 48" className="h-7 w-7" aria-hidden="true">
+                        <path
+                          d="M0 23.04C0 12.18 0 6.75 3.37 3.37 6.75 0 12.18 0 23.04 0h1.92C35.82 0 41.25 0 44.63 3.37 48 6.75 48 12.18 48 23.04v1.92c0 10.86 0 16.29-3.37 19.67C41.25 48 35.82 48 24.96 48h-1.92c-10.86 0-16.29 0-19.67-3.37C0 41.25 0 35.82 0 24.96v-1.92Z"
+                          fill="#fff"
+                        />
+                        <path
+                          d="M25.54 34.58C14.6 34.58 8.36 27.08 8.1 14.6h5.48c.18 9.16 4.22 13.04 7.42 13.84V14.6h5.16v7.9c3.16-.34 6.48-3.94 7.6-7.9h5.16c-.86 4.88-4.46 8.48-7.02 9.96 2.56 1.2 6.66 4.34 8.22 10.02h-5.68c-1.22-3.8-4.26-6.74-8.28-7.14v7.14h-.62Z"
+                          fill="#0077FF"
+                        />
+                      </svg>
+                    ) : (
+                      <OAuthProviderIcon provider={provider.name} className="h-7 w-7" />
+                    )}
+                    <span>{providerLabel(provider.name, provider.display_name)}</span>
+                  </button>
+                ))}
               </div>
             )}
 
             {/* Email auth section */}
             {isEmailAuthEnabled && (
-              <div className={`${oauthProviders.length > 0 ? '' : 'mt-5 pt-1'} space-y-4 pb-1`}>
+              <div>
+                {oauthProviders.length > 0 && (
+                  <div className="mb-3.5 flex items-center gap-3 text-base text-dark-400 lg:hidden">
+                    <span className="flex-1 border-t-[1.5px] border-dashed border-dark-700" />
+                    {t('auth.napkin.orEmail')}
+                    <span className="flex-1 border-t-[1.5px] border-dashed border-dark-700" />
+                  </div>
+                )}
+                {oauthProviders.length > 0 && (
+                  <p className="mb-3.5 hidden text-base text-dark-400 lg:block">
+                    {t('auth.napkin.orEmail')}
+                  </p>
+                )}
+
+                {error && (
+                  <div className="mb-4 rounded-xl border-2 border-error-600 px-4 py-2.5 text-base text-error-700">
+                    {error}
+                  </div>
+                )}
+
                 {showForgotPassword ? (
-                  /* Forgot password screen - replaces login/register */
                   forgotPasswordSent ? (
-                    <div className="space-y-4 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-success-500/20">
-                        <svg
-                          className="h-6 w-6 text-success-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-sm font-medium text-dark-100">
+                    <div className="napkin napkin-tilt">
+                      <p className="text-lg font-semibold text-dark-100">
                         {t('auth.checkEmail', 'Check your email')}
                       </p>
-                      <p className="text-xs text-dark-400">
+                      <p className="mb-5 mt-2 text-base text-dark-400">
                         {t(
                           'auth.passwordResetSent',
                           'If an account exists with this email, we sent password reset instructions.',
@@ -619,92 +579,88 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={closeForgotPasswordModal}
-                        className="text-sm text-accent-400 transition-colors hover:text-accent-300"
+                        className="napkin-btn-line"
                       >
                         {t('common.back', 'Back')}
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <p className="text-center text-sm text-dark-400">
+                    <form onSubmit={handleForgotPassword} className="napkin napkin-tilt grid gap-4">
+                      <p className="text-base text-dark-400">
                         {t(
                           'auth.forgotPasswordHint',
                           'Enter your email and we will send you instructions to reset your password.',
                         )}
                       </p>
-                      <form onSubmit={handleForgotPassword} className="space-y-3">
-                        <div>
-                          <label htmlFor="forgotEmail" className="label">
-                            Email
-                          </label>
-                          <input
-                            id="forgotEmail"
-                            type="email"
-                            value={forgotPasswordEmail}
-                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            className="input"
-                            autoFocus
-                          />
-                        </div>
-                        {forgotPasswordError && (
-                          <p className="text-sm text-error-400">{forgotPasswordError}</p>
-                        )}
-                        <button
-                          type="submit"
-                          disabled={forgotPasswordLoading}
-                          className="btn-primary w-full py-2.5"
-                        >
-                          {forgotPasswordLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                              {t('common.loading')}
-                            </span>
-                          ) : (
-                            t('auth.sendResetLink', 'Send reset link')
-                          )}
-                        </button>
-                      </form>
-                      <div className="text-center">
-                        <button
-                          type="button"
-                          onClick={closeForgotPasswordModal}
-                          className="text-sm text-dark-400 transition-colors hover:text-dark-200"
-                        >
-                          {t('common.back', 'Back')}
-                        </button>
+                      <div>
+                        <label htmlFor="forgotEmail" className="label">
+                          {t('auth.napkin.emailLabel')}
+                        </label>
+                        <input
+                          id="forgotEmail"
+                          type="email"
+                          value={forgotPasswordEmail}
+                          onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                          placeholder="ivan@mail.ru"
+                          className="input"
+                          autoFocus
+                        />
                       </div>
-                    </div>
+                      {forgotPasswordError && (
+                        <p className="text-base text-error-700">{forgotPasswordError}</p>
+                      )}
+                      <button type="submit" disabled={forgotPasswordLoading} className="napkin-btn">
+                        {forgotPasswordLoading
+                          ? t('common.loading')
+                          : t('auth.sendResetLink', 'Send reset link')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeForgotPasswordModal}
+                        className="justify-self-center text-base text-accent-500 underline underline-offset-4"
+                      >
+                        {t('common.back', 'Back')}
+                      </button>
+                    </form>
                   )
                 ) : (
-                  /* Normal login / register */
                   <>
-                    <div className="flex rounded-lg bg-dark-800 p-1">
-                      <button
-                        type="button"
-                        className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
-                          authMode === 'login'
-                            ? 'bg-accent-500 text-white'
-                            : 'text-dark-400 hover:text-dark-200'
-                        }`}
-                        onClick={() => setAuthMode('login')}
-                      >
-                        {t('auth.login')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
-                          authMode === 'register'
-                            ? 'bg-accent-500 text-white'
-                            : 'text-dark-400 hover:text-dark-200'
-                        }`}
-                        onClick={() => setAuthMode('register')}
-                      >
-                        {t('auth.register', 'Register')}
-                      </button>
-                    </div>
+                    <form
+                      className="napkin napkin-tilt grid gap-4"
+                      onSubmit={handleMailForm}
+                      noValidate
+                    >
+                      {authMode === 'login' && emailStep === 'password' ? (
+                        <button
+                          type="button"
+                          onClick={() => setEmailStep('email')}
+                          className="justify-self-start rounded-full border-[1.5px] border-dashed border-dark-700 px-3.5 py-2 text-base text-dark-100"
+                        >
+                          {email}{' '}
+                          <u className="ml-1.5 text-accent-500 underline-offset-4">
+                            {t('auth.napkin.changeEmail')}
+                          </u>
+                        </button>
+                      ) : (
+                        <div>
+                          <label htmlFor="email" className="label">
+                            {t('auth.napkin.emailLabel')}
+                          </label>
+                          <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            inputMode="email"
+                            autoComplete="email"
+                            required
+                            className="input"
+                            placeholder="ivan@mail.ru"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                          />
+                        </div>
+                      )}
 
-                    <form className="space-y-3" onSubmit={handleEmailSubmit}>
                       {authMode === 'register' && (
                         <div>
                           <label htmlFor="firstName" className="label">
@@ -723,44 +679,38 @@ export default function Login() {
                         </div>
                       )}
 
-                      <div>
-                        <label htmlFor="email" className="label">
-                          {t('auth.email')}
-                        </label>
-                        <input
-                          id="email"
-                          name="email"
-                          type="email"
-                          autoComplete="email"
-                          required
-                          className="input"
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="password" className="label">
-                          {t('auth.password')}
-                        </label>
-                        <input
-                          id="password"
-                          name="password"
-                          type="password"
-                          autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                          required
-                          className="input"
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                        />
-                        {authMode === 'register' && password.length > 0 && password.length < 8 && (
-                          <p className="mt-1.5 text-xs text-error-400">
-                            {t('auth.passwordTooShort', 'Password must be at least 8 characters')}
-                          </p>
-                        )}
-                      </div>
+                      {(authMode === 'register' || emailStep === 'password') && (
+                        <div>
+                          <label htmlFor="password" className="label">
+                            {authMode === 'register'
+                              ? t('auth.napkin.newPassword')
+                              : t('auth.password')}
+                          </label>
+                          <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autoComplete={
+                              authMode === 'login' ? 'current-password' : 'new-password'
+                            }
+                            required
+                            autoFocus={authMode === 'login'}
+                            className="input"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                          />
+                          {authMode === 'register' &&
+                            password.length > 0 &&
+                            password.length < 8 && (
+                              <p className="mt-1.5 text-sm text-error-700">
+                                {t(
+                                  'auth.passwordTooShort',
+                                  'Password must be at least 8 characters',
+                                )}
+                              </p>
+                            )}
+                        </div>
+                      )}
 
                       {authMode === 'register' && (
                         <div>
@@ -774,7 +724,6 @@ export default function Login() {
                             autoComplete="new-password"
                             required
                             className="input"
-                            placeholder="••••••••"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                           />
@@ -782,99 +731,116 @@ export default function Login() {
                       )}
 
                       {authMode === 'register' && (
-                        <label className="flex cursor-pointer items-center gap-3">
+                        <label className="flex cursor-pointer items-start gap-3">
                           <input
                             type="checkbox"
                             checked={agreePersonalData}
                             onChange={(e) => setAgreePersonalData(e.target.checked)}
-                            className="h-4 w-4 flex-shrink-0 cursor-pointer accent-accent-500"
+                            className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer accent-accent-500"
                           />
-                          <span className="text-xs text-dark-400">
+                          <span className="text-base text-dark-400">
+                            {t('auth.napkin.agree')}{' '}
                             <Link
                               to="/info?tab=personal-data"
                               target="_blank"
-                              className="text-accent-400 underline underline-offset-2 transition-colors hover:text-accent-300"
+                              className="text-accent-500 underline underline-offset-4"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {t('info.personalData')}
+                              {t('auth.napkin.personalDataLink')}
                             </Link>
-                            {' — '}
-                            {t('auth.agreeCheckbox', 'I agree')}
                           </span>
                         </label>
                       )}
 
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="btn-primary w-full py-2.5"
-                      >
-                        {isLoading ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            {t('common.loading')}
-                          </span>
-                        ) : authMode === 'login' ? (
-                          t('auth.login')
-                        ) : (
-                          t('auth.register', 'Register')
-                        )}
+                      <button type="submit" disabled={isLoading} className="napkin-btn">
+                        {isLoading
+                          ? t('common.loading')
+                          : authMode === 'register'
+                            ? t('auth.napkin.createAccount')
+                            : emailStep === 'email'
+                              ? t('auth.napkin.continue')
+                              : t('auth.login')}
                       </button>
-                    </form>
 
-                    {authMode === 'register' && (
-                      <p className="text-center text-xs text-dark-500">
-                        {t(
-                          'auth.verificationEmailNotice',
-                          'After registration, a verification email will be sent to your address',
-                        )}
-                      </p>
-                    )}
+                      {authMode === 'register' && (
+                        <p className="text-sm text-dark-400">
+                          {t(
+                            'auth.verificationEmailNotice',
+                            'After registration, a verification email will be sent to your address',
+                          )}
+                        </p>
+                      )}
 
-                    {authMode === 'login' && (
-                      <div className="text-center">
+                      {authMode === 'login' && emailStep === 'password' && (
                         <button
                           type="button"
                           onClick={() => setShowForgotPassword(true)}
-                          className="text-sm text-accent-400 transition-colors hover:text-accent-300"
+                          className="justify-self-center text-base text-accent-500 underline underline-offset-4"
                         >
                           {t('auth.forgotPassword', 'Forgot password?')}
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </form>
+
+                    <p className="mt-5 text-center text-base text-dark-400">
+                      {authMode === 'login'
+                        ? t('auth.napkin.firstTime')
+                        : t('auth.napkin.haveAccount')}{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError('');
+                          setEmailStep('email');
+                          setAuthMode(authMode === 'login' ? 'register' : 'login');
+                        }}
+                        className="font-semibold text-accent-500 underline underline-offset-4"
+                      >
+                        {authMode === 'login' ? t('auth.napkin.createAccount') : t('auth.login')}
+                      </button>
+                    </p>
                   </>
                 )}
               </div>
             )}
           </div>
         )}
-      </div>
-      {/* Legal links footer */}
-      <div className="relative mt-6 flex w-full max-w-md flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-dark-500">
-        {import.meta.env.VITE_LEGAL_INFO && (
-          <span className="w-full text-center text-dark-600">
-            {import.meta.env.VITE_LEGAL_INFO}
-          </span>
+
+        {/* Legacy provider recovery */}
+        {!registeredEmail && (
+          <div className="mt-8 border-t-[1.5px] border-dashed border-dark-700 pt-4">
+            <button
+              type="button"
+              onClick={handleLegacyRecoveryOpenToggle}
+              className="flex w-full items-center gap-2 text-left text-base font-medium text-dark-100"
+              aria-expanded={isLegacyRecoveryOpen}
+            >
+              <span>{t('auth.legacyLoginQuestion', 'Входили через Google или Telegram?')}</span>
+              <span className="font-hand text-xl text-accent-500" aria-hidden="true">
+                {isLegacyRecoveryOpen ? '↑' : '↓'}
+              </span>
+            </button>
+            {isLegacyRecoveryOpen && (
+              <div className="mt-2 max-w-[46ch] space-y-3 text-base text-dark-400">
+                <p>{t('auth.napkin.legacyShort')}</p>
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={openAccountsAfterLogin}
+                    onChange={(event) => handleLegacyRecoveryToggle(event.target.checked)}
+                    className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-accent-500"
+                  />
+                  <span>{t('auth.openAccountsAfterLogin')}</span>
+                </label>
+              </div>
+            )}
+          </div>
         )}
-        <Link to="/support" className="transition-colors hover:text-dark-300">
-          {t('nav.support')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=rules" className="transition-colors hover:text-dark-300">
-          {t('info.rules')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=privacy" className="transition-colors hover:text-dark-300">
-          {t('info.privacy')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=offer" className="transition-colors hover:text-dark-300">
-          {t('info.offer')}
-        </Link>
-        <span className="text-dark-700">·</span>
-        <Link to="/info?tab=personal-data" className="transition-colors hover:text-dark-300">
-          {t('info.personalData')}
-        </Link>
+
+        {/* Legal links footer */}
+        <div className="mt-8 grid gap-1.5 border-t-[1.5px] border-dashed border-dark-700 pt-4 text-sm text-dark-400">
+          {import.meta.env.VITE_LEGAL_INFO && <span>{import.meta.env.VITE_LEGAL_INFO}</span>}
+          {legalLinks}
+        </div>
       </div>
     </div>
   );
