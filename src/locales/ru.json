@@ -8314,8 +8314,8 @@
     "asGift": "В подарок",
     "contactLabel": "Ваш email или @username Telegram",
     "yourContact": "Ваш email или @username",
-    "contactPlaceholder": "email@example.com или @username",
-    "contactHint": "Введите email или Telegram @username",
+    "contactPlaceholder": "ivan@mail.ru или @ivan",
+    "contactHint": "Сюда придёт ссылка на подписку.",
     "recipientLabel": "Кому подарить",
     "recipientPlaceholder": "email или @username получателя",
     "giftMessageLabel": "Поздравление (необязательно)",
@@ -8402,7 +8402,17 @@
     },
     "perMonth": "/мес",
     "dailyLabel": "Суточный",
-    "daysCount": "Количество дней"
+    "daysCount": "Количество дней",
+    "napkin": {
+      "period": "Срок",
+      "tariff": "Тариф",
+      "contact": "Почта или Telegram",
+      "payment": "Оплата",
+      "order": "ЗАКАЗ",
+      "traffic": "Трафик",
+      "devices": "Устройства",
+      "total": "ИТОГО"
+    }
   },
   "coupon": {
     "title": "Купон на подписку",

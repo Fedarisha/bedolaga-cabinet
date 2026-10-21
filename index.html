@@ -8,11 +8,11 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#fbfbf8" />
+    <meta name="theme-color" content="#f4f4ef" />
     <!-- Страница сама ведёт обе темы. Без этого Android WebView (Telegram на
          Xiaomi с системным «тёмным режимом для приложений») затемняет её
          алгоритмом — по слоям и не за один кадр: цвета «прыгают». -->
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -72,7 +72,7 @@
          специфичный селектор здесь (например `html.light body`) навсегда
          перекрывал бы кастомный светлый фон. :where() обнуляет вклад класса. */
       body {
-        background-color: #fbfbf8;
+        background-color: #f4f4ef;
       }
       :where(html.dark) body {
         background-color: #0a0f1a;
@@ -126,7 +126,7 @@
           root.classList.add(theme);
           if (theme === 'light') {
             var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', '#fbfbf8');
+            if (meta) meta.setAttribute('content', '#f4f4ef');
           }
         } catch (e) {
           // Хранилище заблокировано — остаётся светлая тема из разметки.

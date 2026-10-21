@@ -70,10 +70,10 @@ describe('applyThemeColors: статусные палитры', () => {
     // Иначе после загрузки JS цвета «уезжают» относительно первой отрисовки.
     applyThemeColors(DEFAULT_THEME_COLORS);
 
-    expect(readVar('--color-accent-500')).toBe('59, 130, 246');
-    expect(readVar('--color-success-500')).toBe('34, 197, 94');
-    expect(readVar('--color-warning-500')).toBe('245, 158, 11');
-    expect(readVar('--color-error-500')).toBe('239, 68, 68');
+    expect(readVar('--color-accent-500')).toBe('29, 60, 158');
+    expect(readVar('--color-success-500')).toBe('31, 122, 67');
+    expect(readVar('--color-warning-500')).toBe('194, 124, 14');
+    expect(readVar('--color-error-500')).toBe('179, 38, 30');
   });
 
   it.each([
@@ -118,15 +118,17 @@ describe('applyThemeColors: статусные палитры', () => {
     applyThemeColors({ ...DEFAULT_THEME_COLORS, accent: NAVY_ACCENT });
     expect(readVar('--color-on-accent')).toBe('255, 255, 255');
 
-    // Дефолтный синий: белый даёт 3.68 — ниже AA для текста, поэтому берётся
-    // тёмная надпись (4.85). Прежнее правило («белый пока ≥3:1») оставляло
-    // кнопку на грани, и это же правило роняло надписи операторских палитр:
-    // розовый #ec4899 держал белый на 3.4 против тёмного 5.2.
+    // Дефолтная палитра «салфетки»: на чернилах, тёмно-зелёном и красном читается
+    // белый, на охре — тёмная надпись.
     applyThemeColors(DEFAULT_THEME_COLORS);
-    expect(readVar('--color-on-accent')).toBe('15, 23, 42');
-    expect(readVar('--color-on-error')).toBe('15, 23, 42');
-    expect(readVar('--color-on-success')).toBe('15, 23, 42');
+    expect(readVar('--color-on-accent')).toBe('255, 255, 255');
+    expect(readVar('--color-on-error')).toBe('255, 255, 255');
+    expect(readVar('--color-on-success')).toBe('255, 255, 255');
     expect(readVar('--color-on-warning')).toBe('15, 23, 42');
+
+    // Прежний синий #3b82f6: белый давал 3.68 — ниже AA, берётся тёмная надпись.
+    applyThemeColors({ ...DEFAULT_THEME_COLORS, accent: '#3b82f6' });
+    expect(readVar('--color-on-accent')).toBe('15, 23, 42');
   });
 
   it('заливка, на которой не читается ни белый, ни тёмный, подтягивается', () => {

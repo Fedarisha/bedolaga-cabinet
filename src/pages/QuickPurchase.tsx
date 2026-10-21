@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ import {
   BackgroundRenderer,
   StaticBackgroundRenderer,
 } from '../components/backgrounds/BackgroundRenderer';
-import { CheckCircleIcon, CheckIcon, DevicesIcon } from '@/components/icons';
+import { CheckCircleIcon, DevicesIcon } from '@/components/icons';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { cn } from '../lib/utils';
 import { getApiErrorMessage } from '../utils/api-error';
@@ -133,6 +133,24 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
+/** Шаг заказа: рукописный номер и заголовок. */
+function NapkinStep({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+  return (
+    <section className="border-b-[1.5px] border-dashed border-dark-700 py-6 first:pt-1 last:border-b-0 last:pb-1">
+      <div className="mb-4 flex items-baseline gap-3.5">
+        <span
+          className="w-7 shrink-0 font-hand text-4xl leading-[0.8] text-accent-500"
+          aria-hidden="true"
+        >
+          {n}
+        </span>
+        <h2 className="text-xl font-semibold text-dark-50">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function PeriodTabs({
   periods,
   selectedDays,
@@ -145,17 +163,18 @@ function PeriodTabs({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap">
       {periods.map((period) => (
         <button
           key={period.days}
           type="button"
+          aria-pressed={selectedDays === period.days}
           onClick={() => onSelect(period.days)}
           className={cn(
-            'whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200',
+            'whitespace-nowrap rounded-[14px_18px_15px_17px] border-2 px-5 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5',
             selectedDays === period.days
-              ? 'bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25'
-              : 'bg-dark-800/50 text-dark-300 hover:bg-dark-700/50 hover:text-dark-100',
+              ? 'border-accent-500 bg-accent-500 text-on-accent'
+              : 'border-dark-100 text-dark-100',
           )}
         >
           {formatPeriodLabel(period.days, t)}
@@ -175,8 +194,8 @@ function DailyDaysPicker({ days, onChange }: { days: number; onChange: (v: numbe
   };
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-dark-800/50 bg-dark-900/50 p-4">
-      <span className="text-sm font-medium text-dark-200">
+    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-marker-soft p-4">
+      <span className="text-base font-semibold text-dark-100">
         {t('landing.daysCount', 'Количество дней')}
       </span>
       <div className="flex items-center gap-2">
@@ -282,10 +301,10 @@ function ContactForm({
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-4 rounded-2xl border border-dark-800/50 bg-dark-900/50 p-5">
+    <div className="space-y-4">
       {/* Main contact */}
       <div>
-        <label htmlFor="contact-input" className="mb-2 block text-sm font-medium text-dark-200">
+        <label htmlFor="contact-input" className="sr-only">
           {t('landing.yourContact', 'Your contact')}
         </label>
         <input
@@ -294,9 +313,9 @@ function ContactForm({
           value={contactValue}
           onChange={(e) => onContactChange(e.target.value)}
           placeholder={t('landing.contactPlaceholder', 'email@example.com or @telegram')}
-          className="w-full rounded-xl border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-sm text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/25"
+          className="w-full border-0 border-b-[2.5px] border-dark-100 bg-transparent px-1 py-3 text-xl text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500"
         />
-        <p className="mt-1.5 text-xs text-dark-500">{t('landing.contactHint')}</p>
+        <p className="mt-2 text-base text-dark-400">{t('landing.contactHint')}</p>
       </div>
 
       {/* Gift fields */}
@@ -322,7 +341,7 @@ function ContactForm({
                 value={giftRecipient}
                 onChange={(e) => onGiftRecipientChange(e.target.value)}
                 placeholder={t('landing.recipientPlaceholder', 'Recipient email or @telegram')}
-                className="w-full rounded-xl border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-sm text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/25"
+                className="w-full border-0 border-b-[2.5px] border-dark-100 bg-transparent px-1 py-3 text-xl text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500"
               />
             </div>
             <div>
@@ -371,32 +390,30 @@ function TariffCard({
       aria-checked={isSelected}
       onClick={onSelect}
       className={cn(
-        'relative flex w-full flex-col rounded-2xl border p-5 text-start transition-all duration-200',
-        isSelected
-          ? 'border-accent-500/50 bg-accent-500/5 ring-1 ring-accent-500/25'
-          : 'border-dark-800/50 bg-dark-900/50 hover:border-dark-700/50 hover:bg-dark-800/30',
+        'relative flex w-full flex-col rounded-xl px-5 py-4 text-start transition-colors duration-200',
+        !isSelected && 'hover:bg-dark-900',
       )}
     >
+      {/* Выбранный тариф обведён «от руки» */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'pointer-events-none absolute -inset-x-0.5 -inset-y-0.5 rounded-[26px_34px_24px_30px/30px_24px_34px_26px] border-[2.5px] border-accent-500 transition-all duration-300',
+          isSelected ? '-rotate-1 scale-100 opacity-100' : 'scale-95 opacity-0',
+        )}
+      />
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div>
-          <h3 className="text-base font-semibold text-dark-50">{tariff.name}</h3>
+          <h3 className="font-display text-2xl font-extrabold text-dark-50">{tariff.name}</h3>
           {tariff.description && (
             <p className="mt-0.5 text-xs text-dark-400">{tariff.description}</p>
           )}
         </div>
-        <div
-          className={cn(
-            'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-            isSelected ? 'border-accent-500 bg-accent-500' : 'border-dark-600',
-          )}
-        >
-          {isSelected && <CheckIcon className="h-3 w-3 text-white" />}
-        </div>
       </div>
 
       {/* Info row */}
-      <div className="flex items-center gap-3 text-xs text-dark-400">
+      <div className="flex flex-wrap items-center gap-3 text-base text-dark-400">
         <span className="flex items-center gap-1">
           <svg
             className="h-3.5 w-3.5"
@@ -423,9 +440,9 @@ function TariffCard({
 
       {/* Price */}
       {selectedPeriod && (
-        <div className="mt-3 border-t border-dark-800/30 pt-3">
+        <div className="mt-2">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-accent-400">
+            <span className="font-mono text-2xl font-bold tabular-nums text-dark-50">
               {formatPrice(selectedPeriod.price_kopeks)}
             </span>
             {selectedPeriod.original_price_kopeks != null &&
@@ -449,7 +466,7 @@ function TariffCard({
               const months = selectedPeriod.days / 30;
               const perMonth = Math.round(selectedPeriod.price_kopeks / months);
               return (
-                <div className="mt-0.5 text-xs text-dark-400">
+                <div className="mt-0.5 font-hand text-2xl text-accent-500">
                   ≈ {formatPrice(perMonth)}
                   {t('landing.perMonth', '/мес')}
                 </div>
@@ -479,10 +496,8 @@ function PaymentMethodCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border transition-all duration-200',
-        isSelected
-          ? 'border-accent-500/50 bg-accent-500/5'
-          : 'border-dark-800/50 bg-dark-900/50 hover:border-dark-700/50 hover:bg-dark-800/30',
+        'rounded-[14px] border-2 transition-all duration-200',
+        isSelected ? 'border-accent-500' : 'border-dark-700 hover:border-dark-400',
       )}
     >
       <button
@@ -501,7 +516,9 @@ function PaymentMethodCard({
 
         {/* Text */}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-dark-100">{method.display_name}</p>
+          <p className="font-display text-base font-extrabold text-accent-500">
+            {method.display_name}
+          </p>
           {method.description && (
             <p className="mt-0.5 truncate text-xs text-dark-400">{method.description}</p>
           )}
@@ -528,10 +545,10 @@ function PaymentMethodCard({
                 type="button"
                 onClick={() => onSelectSubOption(opt.id)}
                 className={cn(
-                  'rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200',
+                  'rounded-full border-[1.5px] px-4 py-2 text-base font-medium transition-all duration-200',
                   selectedSubOption === opt.id
-                    ? 'bg-accent-500 text-on-accent shadow-sm shadow-accent-500/25'
-                    : 'bg-dark-800/50 text-dark-300 hover:bg-dark-700/50 hover:text-dark-100',
+                    ? 'border-marker bg-marker font-semibold text-dark-100'
+                    : 'border-dark-100 text-dark-100 hover:bg-dark-900',
                 )}
               >
                 {opt.name}
@@ -607,45 +624,55 @@ function SummaryCard({
 
   return (
     <div className="space-y-5">
-      {/* Summary */}
-      <div className="rounded-2xl border border-dark-800/50 bg-dark-900/50 p-5">
-        {selectedTariff && (
-          <div className="mb-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-dark-500">
-              {t('landing.selectedTariff', 'Tariff')}
-            </p>
-            <p className="mt-1 text-sm font-semibold text-dark-50">{selectedTariff.name}</p>
-          </div>
-        )}
-        {selectedPeriod && (
-          <div className="mb-4">
-            <p className="text-xs font-medium uppercase tracking-wider text-dark-500">
-              {t('landing.period', 'Period')}
-            </p>
-            <p className="mt-1 text-sm text-dark-200">{periodLabel}</p>
-          </div>
-        )}
-        <div className="border-t border-dark-800/50 pt-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-dark-500">
-            {t('landing.total', 'Total')}
-          </p>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-2xl font-bold text-accent-400">{formatPrice(currentPrice)}</span>
+      {/* Чек */}
+      <div className="napkin-receipt">
+        <div className="grid gap-0.5 border-b-[1.5px] border-dashed border-dark-400 pb-3.5 text-center">
+          <strong className="font-display text-lg tracking-wide text-dark-50">
+            {getCachedBranding()?.name || config.title}
+          </strong>
+          <span className="text-xs tracking-[0.12em] text-dark-400">
+            {t('landing.napkin.order')} · {new Date().toLocaleDateString('ru-RU')}
+          </span>
+        </div>
+        <dl className="my-3.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
+          {selectedTariff && (
+            <>
+              <dt className="text-dark-400">{t('landing.selectedTariff', 'Tariff')}</dt>
+              <dd className="m-0 text-right font-bold">{selectedTariff.name}</dd>
+              <dt className="text-dark-400">{t('landing.napkin.traffic')}</dt>
+              <dd className="m-0 text-right font-bold">
+                {selectedTariff.traffic_limit_gb === 0
+                  ? '∞'
+                  : `${selectedTariff.traffic_limit_gb} ${t('landing.gb', 'GB')}`}
+              </dd>
+              <dt className="text-dark-400">{t('landing.napkin.devices')}</dt>
+              <dd className="m-0 text-right font-bold">{selectedTariff.device_limit}</dd>
+            </>
+          )}
+          {selectedPeriod && (
+            <>
+              <dt className="text-dark-400">{t('landing.period', 'Period')}</dt>
+              <dd className="m-0 text-right font-bold">{periodLabel}</dd>
+            </>
+          )}
+        </dl>
+        <div className="flex items-baseline justify-between gap-2 border-t-[1.5px] border-dashed border-dark-400 pt-3.5">
+          <span>{t('landing.napkin.total')}</span>
+          <span className="text-right">
             {selectedPeriod?.original_price_kopeks != null &&
               selectedPeriod.original_price_kopeks > selectedPeriod.price_kopeks && (
-                <>
-                  <span className="text-base text-dark-500 line-through">
-                    {formatPrice(selectedPeriod.original_price_kopeks)}
-                  </span>
-                  {selectedPeriod.discount_percent != null && (
-                    <span className="rounded-full bg-accent-500/20 px-2 py-0.5 text-xs font-bold text-accent-400">
-                      -{selectedPeriod.discount_percent}%
-                    </span>
-                  )}
-                </>
+                <span className="mr-2 text-base text-dark-400 line-through">
+                  {formatPrice(selectedPeriod.original_price_kopeks)}
+                </span>
               )}
-          </div>
+            <b className="text-3xl tabular-nums">{formatPrice(currentPrice)}</b>
+          </span>
         </div>
+        {selectedPeriod?.discount_percent != null && selectedPeriod.discount_percent > 0 && (
+          <p className="mt-1.5 text-right font-hand text-2xl text-accent-500">
+            −{selectedPeriod.discount_percent}%
+          </p>
+        )}
       </div>
 
       {/* Features */}
@@ -672,9 +699,9 @@ function SummaryCard({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-xl border border-error-500/20 bg-error-500/5 p-3"
+            className="rounded-xl border-2 border-error-600 p-3"
           >
-            <p className="text-sm text-error-400">{submitError}</p>
+            <p className="text-base text-error-700">{submitError}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -687,8 +714,8 @@ function SummaryCard({
             style={{
               // Ярлык iOS: под кнопкой ещё индикатор «Домой» (safe-area снизу).
               paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
-              background:
-                'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 70%, transparent 100%)',
+              background: 'rgb(var(--color-dark-950))',
+              borderTop: '2px solid rgb(var(--color-dark-100))',
             }}
           >
             <button
@@ -709,10 +736,8 @@ function SummaryCard({
               }}
               disabled={isSubmitting}
               className={cn(
-                'flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200',
-                canSubmit && !isSubmitting
-                  ? 'bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25 hover:bg-accent-400 hover:shadow-accent-500/40 active:scale-[0.98]'
-                  : 'cursor-not-allowed bg-dark-800 text-dark-500',
+                'napkin-btn',
+                !(canSubmit && !isSubmitting) && '!cursor-not-allowed !opacity-45 !shadow-none',
               )}
             >
               {isSubmitting ? (
@@ -755,10 +780,8 @@ function SummaryCard({
           }}
           disabled={isSubmitting}
           className={cn(
-            'flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200',
-            canSubmit && !isSubmitting
-              ? 'bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25 hover:bg-accent-400 hover:shadow-accent-500/40 active:scale-[0.98]'
-              : 'cursor-not-allowed bg-dark-800 text-dark-500',
+            'napkin-btn',
+            !(canSubmit && !isSubmitting) && '!cursor-not-allowed !opacity-45 !shadow-none',
           )}
         >
           {isSubmitting ? (
@@ -1295,14 +1318,12 @@ export default function QuickPurchase() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-10 text-center"
+          className="mb-8"
         >
-          <h1 className="text-3xl font-bold tracking-tight text-dark-50 sm:text-4xl">
+          <h1 className="text-[clamp(38px,6.6vw,80px)] font-extrabold leading-[0.98] tracking-[-0.02em] text-dark-50">
             {config.title}
           </h1>
-          {config.subtitle && (
-            <p className="mt-3 text-base text-dark-300 sm:text-lg">{config.subtitle}</p>
-          )}
+          {config.subtitle && <p className="mt-3 text-lg text-dark-400">{config.subtitle}</p>}
         </motion.div>
 
         {/* Discount banner */}
@@ -1312,118 +1333,116 @@ export default function QuickPurchase() {
           )}
         </AnimatePresence>
 
-        {/* Two-column layout */}
-        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-          {/* Left column */}
+        {/* Two-column layout: заказ на салфетке слева, чек справа */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:gap-14">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="min-w-0 space-y-6"
+            className="napkin min-w-0 lg:rotate-[-0.6deg]"
           >
-            {/* Period tabs */}
-            {allPeriods.length > 0 && (
-              <div>
-                <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">
-                  {t('landing.choosePeriod', 'Choose period')}
-                </h2>
-                <PeriodTabs
-                  periods={allPeriods}
-                  selectedDays={selectedPeriodDays ?? 0}
-                  onSelect={setSelectedPeriodDays}
-                />
-                {selectedPeriodDays === DAILY_DAYS_SENTINEL && (
-                  <DailyDaysPicker days={dailyDays} onChange={setDailyDays} />
-                )}
-              </div>
-            )}
-
-            {/* Gift toggle */}
-            {config.gift_enabled && <GiftToggle isGift={isGift} onToggle={setIsGift} />}
-
-            {/* Contact form */}
-            <ContactForm
-              contactValue={contactValue}
-              onContactChange={(v) => {
-                setContactValue(v);
-                try {
-                  localStorage.setItem(contactKey, v);
-                } catch {
-                  /* */
-                }
-                setSubmitError(null);
-              }}
-              isGift={isGift}
-              giftRecipient={giftRecipient}
-              onGiftRecipientChange={(v) => {
-                setGiftRecipient(v);
-                setSubmitError(null);
-              }}
-              giftMessage={giftMessage}
-              onGiftMessageChange={setGiftMessage}
-            />
-
-            {/* Tariff cards */}
-            {showTariffCards && (
-              <div>
-                <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">
-                  {t('landing.chooseTariff', 'Choose tariff')}
-                </h2>
-                <div
-                  role="radiogroup"
-                  aria-label={t('landing.chooseTariff', 'Choose tariff')}
-                  className="grid gap-3 sm:grid-cols-2"
-                >
-                  {visibleTariffs.map((tariff) => {
-                    const period = tariff.periods.find((p) => p.days === selectedPeriodDays);
-                    return (
-                      <TariffCard
-                        key={tariff.id}
-                        tariff={tariff}
-                        isSelected={tariff.id === selectedTariffId}
-                        selectedPeriod={period}
-                        onSelect={() => setSelectedTariffId(tariff.id)}
+            {(() => {
+              let n = 0;
+              const next = () => ++n;
+              return (
+                <>
+                  {allPeriods.length > 0 && (
+                    <NapkinStep n={next()} title={t('landing.napkin.period')}>
+                      <PeriodTabs
+                        periods={allPeriods}
+                        selectedDays={selectedPeriodDays ?? 0}
+                        onSelect={setSelectedPeriodDays}
                       />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                      {selectedPeriodDays === DAILY_DAYS_SENTINEL && (
+                        <DailyDaysPicker days={dailyDays} onChange={setDailyDays} />
+                      )}
+                    </NapkinStep>
+                  )}
 
-            {/* Payment methods */}
-            {config.payment_methods.length > 0 && (
-              <div>
-                <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">
-                  {t('landing.paymentMethod', 'Payment method')}
-                </h2>
-                <div
-                  role="radiogroup"
-                  aria-label={t('landing.paymentMethod', 'Payment method')}
-                  className="space-y-2"
-                >
-                  {config.payment_methods.map((method) => (
-                    <PaymentMethodCard
-                      key={method.method_id}
-                      method={method}
-                      isSelected={method.method_id === selectedMethod}
-                      selectedSubOption={
-                        method.method_id === selectedMethod ? selectedSubOption : null
-                      }
-                      onSelect={() => {
-                        setSelectedMethod(method.method_id);
-                        // Auto-select first sub-option (even for single — backend needs suffix)
-                        if (method.sub_options && method.sub_options.length >= 1) {
-                          setSelectedSubOption(method.sub_options[0].id);
-                        } else {
-                          setSelectedSubOption(null);
+                  {showTariffCards && (
+                    <NapkinStep n={next()} title={t('landing.napkin.tariff')}>
+                      <div
+                        role="radiogroup"
+                        aria-label={t('landing.chooseTariff', 'Choose tariff')}
+                        className="grid gap-2"
+                      >
+                        {visibleTariffs.map((tariff) => {
+                          const period = tariff.periods.find((p) => p.days === selectedPeriodDays);
+                          return (
+                            <TariffCard
+                              key={tariff.id}
+                              tariff={tariff}
+                              isSelected={tariff.id === selectedTariffId}
+                              selectedPeriod={period}
+                              onSelect={() => setSelectedTariffId(tariff.id)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </NapkinStep>
+                  )}
+
+                  <NapkinStep n={next()} title={t('landing.napkin.contact')}>
+                    {config.gift_enabled && (
+                      <div className="mb-4">
+                        <GiftToggle isGift={isGift} onToggle={setIsGift} />
+                      </div>
+                    )}
+                    <ContactForm
+                      contactValue={contactValue}
+                      onContactChange={(v) => {
+                        setContactValue(v);
+                        try {
+                          localStorage.setItem(contactKey, v);
+                        } catch {
+                          /* */
                         }
+                        setSubmitError(null);
                       }}
-                      onSelectSubOption={setSelectedSubOption}
+                      isGift={isGift}
+                      giftRecipient={giftRecipient}
+                      onGiftRecipientChange={(v) => {
+                        setGiftRecipient(v);
+                        setSubmitError(null);
+                      }}
+                      giftMessage={giftMessage}
+                      onGiftMessageChange={setGiftMessage}
                     />
-                  ))}
-                </div>
-              </div>
-            )}
+                  </NapkinStep>
+
+                  {config.payment_methods.length > 0 && (
+                    <NapkinStep n={next()} title={t('landing.napkin.payment')}>
+                      <div
+                        role="radiogroup"
+                        aria-label={t('landing.paymentMethod', 'Payment method')}
+                        className="space-y-2"
+                      >
+                        {config.payment_methods.map((method) => (
+                          <PaymentMethodCard
+                            key={method.method_id}
+                            method={method}
+                            isSelected={method.method_id === selectedMethod}
+                            selectedSubOption={
+                              method.method_id === selectedMethod ? selectedSubOption : null
+                            }
+                            onSelect={() => {
+                              setSelectedMethod(method.method_id);
+                              // Auto-select first sub-option (even for single — backend needs suffix)
+                              if (method.sub_options && method.sub_options.length >= 1) {
+                                setSelectedSubOption(method.sub_options[0].id);
+                              } else {
+                                setSelectedSubOption(null);
+                              }
+                            }}
+                            onSelectSubOption={setSelectedSubOption}
+                          />
+                        ))}
+                      </div>
+                    </NapkinStep>
+                  )}
+                </>
+              );
+            })()}
           </motion.div>
 
           {/* Right column (sticky sidebar / bottom on mobile) */}
