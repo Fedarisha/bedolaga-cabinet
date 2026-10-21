@@ -2089,3 +2089,21 @@ input[type="checkbox"]:hover:not(:checked) {
     animation: none;
   }
 }
+
+/* Маркер проводится под словом при загрузке */
+.hl-swipe {
+  animation: hlSwipe 0.9s 0.5s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+@keyframes hlSwipe {
+  from {
+    background-size: 0 40%;
+  }
+  to {
+    background-size: 100% 40%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hl-swipe {
+    animation: none;
+  }
+}
