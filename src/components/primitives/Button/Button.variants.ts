@@ -12,17 +12,19 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // «Салфетка»: чернила с жёлтой тенью маркера
         primary: [
           'bg-accent-500 text-on-accent',
-          'hover:bg-accent-600',
-          'active:bg-accent-700',
-          'shadow-linear-sm hover:shadow-linear',
+          'shadow-[3px_3px_0_rgb(var(--napkin-marker))]',
+          'hover:shadow-[5px_5px_0_rgb(var(--napkin-marker))]',
+          'active:bg-accent-600 active:shadow-[1px_1px_0_rgb(var(--napkin-marker))]',
         ],
+        // Обводка чернилами
         secondary: [
-          'bg-dark-800/80 text-dark-100',
-          'border border-dark-700/50',
-          'hover:bg-dark-700/80 hover:border-dark-600/50',
-          'active:bg-dark-800',
+          'bg-transparent text-accent-500',
+          'border-2 border-accent-500',
+          'hover:shadow-[3px_3px_0_rgb(var(--napkin-marker-soft))]',
+          'active:bg-accent-50',
         ],
         ghost: ['text-dark-300', 'hover:text-dark-100 hover:bg-dark-800/50', 'active:bg-dark-800'],
         destructive: [

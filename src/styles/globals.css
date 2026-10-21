@@ -104,8 +104,8 @@
        она занимает. Всё, что прижато к низу на мобильном (тосты, бары действий,
        низ контента), встаёт выше --mobile-nav-clearance — иначе панель это
        перекрывает. Высота панели — константа дизайна (иконка + подпись). */
-    --mobile-nav-height: 76px;
-    --mobile-nav-offset: max(16px, env(safe-area-inset-bottom, 0px));
+    --mobile-nav-height: 64px;
+    --mobile-nav-offset: env(safe-area-inset-bottom, 0px);
     --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + 12px);
   }
 
@@ -1880,6 +1880,212 @@ input[type="checkbox"]:hover:not(:checked) {
 
 @media (prefers-reduced-motion: reduce) {
   .admin-orb {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   «Салфетка» — набросок шариковой ручкой на белой салфетке.
+   Синие чернила (accent-500), графитовый текст, жёлтый маркер. Стоит в конце
+   файла, чтобы перекрывать светлые варианты компонентов выше.
+   ========================================================================== */
+:root {
+  --napkin-marker: 255, 226, 74;
+  --napkin-marker-soft: 255, 243, 166;
+  --napkin-radius: 14px 18px 15px 17px;
+  --napkin-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .53 0 0 0 0 .48 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@layer base {
+  /* Бумага: фактура волокон поверх фона, и на телефоне тоже — она статичная. */
+  .light body::before {
+    display: block;
+    z-index: 0;
+    opacity: 0.5;
+    background-image: var(--napkin-noise);
+    background-size: 220px 220px;
+    mix-blend-mode: multiply;
+  }
+  .light h1 {
+    font-family: theme("fontFamily.display");
+    letter-spacing: -0.01em;
+  }
+  .light ::selection {
+    background: rgb(var(--napkin-marker));
+    color: rgb(var(--color-dark-100));
+  }
+}
+
+@layer components {
+  /* Главный объект экрана: салфетка с тиснёной каймой. Один на экран. */
+  .napkin {
+    position: relative;
+    border-radius: 6px;
+    background: rgb(var(--color-dark-800));
+    padding: 24px 22px 22px;
+    box-shadow:
+      0 1px 0 rgb(var(--color-dark-700)),
+      0 20px 34px -22px rgba(var(--color-accent-500), 0.3),
+      0 2px 8px rgba(35, 37, 43, 0.06);
+  }
+  .napkin::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border-radius: 3px;
+    pointer-events: none;
+    background:
+      radial-gradient(circle, rgb(var(--color-dark-700)) 1.2px, transparent 1.5px) 0 0 / 10px 10px;
+    -webkit-mask:
+      linear-gradient(#000 0 0) top / 100% 9px no-repeat,
+      linear-gradient(#000 0 0) bottom / 100% 9px no-repeat,
+      linear-gradient(#000 0 0) left / 9px 100% no-repeat,
+      linear-gradient(#000 0 0) right / 9px 100% no-repeat;
+    mask:
+      linear-gradient(#000 0 0) top / 100% 9px no-repeat,
+      linear-gradient(#000 0 0) bottom / 100% 9px no-repeat,
+      linear-gradient(#000 0 0) left / 9px 100% no-repeat,
+      linear-gradient(#000 0 0) right / 9px 100% no-repeat;
+  }
+  .napkin > * {
+    position: relative;
+  }
+  .napkin-tilt {
+    transform: rotate(-0.8deg);
+  }
+  .napkin-tilt > * {
+    transform: rotate(0.8deg);
+  }
+
+  /* Пометка ручкой */
+  .hand {
+    font-family: theme("fontFamily.hand");
+    font-weight: 700;
+    line-height: 1.1;
+    color: rgb(var(--color-accent-500));
+  }
+
+  /* Маркер-выделитель под словом */
+  .hl {
+    background-image: linear-gradient(
+      100deg,
+      transparent 0.25em,
+      rgb(var(--napkin-marker)) 0.25em,
+      rgb(var(--napkin-marker)) calc(100% - 0.15em),
+      transparent calc(100% - 0.15em)
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 40%;
+    background-position: 0 88%;
+  }
+
+  /* Подпись раздела: моноширинная, разрядкой */
+  .napkin-label {
+    font-family: theme("fontFamily.mono");
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgb(var(--color-dark-400));
+  }
+
+  /* Крупная кнопка-чернила с жёлтой тенью маркера */
+  .napkin-btn {
+    display: flex;
+    width: 100%;
+    min-height: 60px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 20px;
+    border: 2px solid rgb(var(--color-accent-500));
+    border-radius: var(--napkin-radius);
+    background: rgb(var(--color-accent-500));
+    color: rgb(var(--color-on-accent));
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    box-shadow: 4px 4px 0 rgb(var(--napkin-marker));
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      opacity 0.2s ease;
+  }
+  .napkin-btn:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 rgb(var(--napkin-marker));
+  }
+  .napkin-btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 rgb(var(--napkin-marker));
+  }
+  .napkin-btn:disabled {
+    opacity: 0.45;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  .napkin-btn-line {
+    @apply napkin-btn;
+    background: transparent;
+    color: rgb(var(--color-accent-500));
+    box-shadow: none;
+  }
+  .napkin-btn-line:hover:not(:disabled) {
+    box-shadow: 4px 4px 0 rgb(var(--napkin-marker-soft));
+  }
+
+  /* Строки-действия, разделённые пунктиром */
+  .napkin-rows > * + * {
+    border-top: 1.5px dashed rgb(var(--color-dark-700));
+  }
+
+  /* ---------- Переопределение компонентов светлой темы ---------- */
+  .light .card,
+  .light .bento-card {
+    @apply border-champagne-300/70 bg-champagne-50;
+    box-shadow:
+      0 1px 0 rgba(35, 37, 43, 0.04),
+      0 10px 24px -20px rgba(var(--color-accent-500), 0.35);
+  }
+  .light .btn-primary {
+    @apply bg-accent-500 text-on-accent hover:bg-accent-500 focus-visible:ring-accent-500 active:bg-accent-600;
+    border-radius: var(--napkin-radius);
+    box-shadow: 3px 3px 0 rgb(var(--napkin-marker));
+  }
+  .light .btn-primary:hover:not(:disabled) {
+    box-shadow: 5px 5px 0 rgb(var(--napkin-marker));
+    transform: translate(-1px, -1px);
+  }
+  .light .btn-secondary {
+    @apply border-2 border-accent-500 bg-transparent text-accent-500 hover:border-accent-500 hover:bg-transparent hover:text-accent-500 active:bg-accent-50;
+    border-radius: var(--napkin-radius);
+  }
+  .light .btn-secondary:hover:not(:disabled) {
+    box-shadow: 3px 3px 0 rgb(var(--napkin-marker-soft));
+  }
+  .light .input {
+    @apply border-2 border-champagne-400 bg-champagne-50 text-champagne-900 placeholder-champagne-500 focus:border-accent-500 focus:ring-marker/40;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+}
+
+/* Линия, которая «прорисовывается ручкой» при появлении (path с pathLength="1") */
+.napkin-draw {
+  stroke-dasharray: 1;
+  animation: napkinDraw 1s 0.15s ease-out both;
+}
+@keyframes napkinDraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .napkin-draw {
     animation: none;
   }
 }

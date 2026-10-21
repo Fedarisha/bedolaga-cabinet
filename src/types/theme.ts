@@ -32,28 +32,29 @@ export interface EnabledThemes {
   light: boolean;
 }
 
+// Кабинет светлый («салфетка»): тёмную тему оператор может включить в админке.
 export const DEFAULT_ENABLED_THEMES: EnabledThemes = {
-  dark: true,
+  dark: false,
   light: true,
 };
 
 // Default theme colors
 export const DEFAULT_THEME_COLORS: ThemeColors = {
-  accent: '#3b82f6',
+  accent: '#1d3c9e',
 
   darkBackground: '#0a0f1a',
   darkSurface: '#0f172a',
   darkText: '#f1f5f9',
   darkTextSecondary: '#94a3b8',
 
-  lightBackground: '#F7E7CE',
-  lightSurface: '#FEF9F0',
-  lightText: '#1F1A12',
-  lightTextSecondary: '#7D6B48',
+  lightBackground: '#f4f4ef',
+  lightSurface: '#fdfdfb',
+  lightText: '#23252b',
+  lightTextSecondary: '#5d606a',
 
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
+  success: '#1f7a43',
+  warning: '#c27c0e',
+  error: '#b3261e',
 };
 
 // Color shade levels for palette generation

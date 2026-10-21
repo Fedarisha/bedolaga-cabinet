@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru" class="dark">
+<html lang="ru" class="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/vpn_logo.png" />
@@ -8,11 +8,11 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#0a0f1a" />
+    <meta name="theme-color" content="#fbfbf8" />
     <!-- Страница сама ведёт обе темы. Без этого Android WebView (Telegram на
          Xiaomi с системным «тёмным режимом для приложений») затемняет её
          алгоритмом — по слоям и не за один кадр: цвета «прыгают». -->
-    <meta name="color-scheme" content="dark light" />
+    <meta name="color-scheme" content="light" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -37,14 +37,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@600;800&display=swap"
       rel="stylesheet"
       media="print"
       onload="this.media = 'all'"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@600;800&display=swap"
         rel="stylesheet"
       />
     </noscript>
@@ -72,10 +72,10 @@
          специфичный селектор здесь (например `html.light body`) навсегда
          перекрывал бы кастомный светлый фон. :where() обнуляет вклад класса. */
       body {
-        background-color: #0a0f1a;
+        background-color: #fbfbf8;
       }
-      :where(html.light) body {
-        background-color: #f7e7ce;
+      :where(html.dark) body {
+        background-color: #0a0f1a;
       }
       /* Схема следует классу темы, а не системной настройке: нативные контролы
          и скроллбары должны совпадать с выбранной темой. Дублируется в
@@ -96,17 +96,18 @@
       // Telegram фон и так задаёт клиент.
       (function () {
         try {
-          var enabled = { dark: true, light: true };
+          // Кабинет светлый («салфетка»); тёмная тема — только если её явно включили в админке.
+          var enabled = { dark: false, light: true };
           try {
             var rawEnabled = localStorage.getItem('cabinet-enabled-themes');
             if (rawEnabled) {
               var parsed = JSON.parse(rawEnabled);
               if (parsed && typeof parsed === 'object') {
-                enabled = { dark: parsed.dark !== false, light: parsed.light !== false };
+                enabled = { dark: parsed.dark === true, light: parsed.light !== false };
               }
             }
           } catch (e) {}
-          if (!enabled.dark && !enabled.light) enabled = { dark: true, light: true };
+          if (!enabled.dark && !enabled.light) enabled = { dark: false, light: true };
 
           var stored = null;
           try {
@@ -116,10 +117,8 @@
           var theme;
           if (stored === 'light' || stored === 'dark') {
             theme = enabled[stored] ? stored : enabled.dark ? 'dark' : 'light';
-          } else if (window.matchMedia('(prefers-color-scheme: light)').matches && enabled.light) {
-            theme = 'light';
           } else {
-            theme = enabled.dark ? 'dark' : 'light';
+            theme = enabled.light ? 'light' : 'dark';
           }
 
           var root = document.documentElement;
@@ -127,10 +126,10 @@
           root.classList.add(theme);
           if (theme === 'light') {
             var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', '#f7e7ce');
+            if (meta) meta.setAttribute('content', '#fbfbf8');
           }
         } catch (e) {
-          // Хранилище заблокировано — остаётся тёмная тема из разметки.
+          // Хранилище заблокировано — остаётся светлая тема из разметки.
         }
       })();
     </script>

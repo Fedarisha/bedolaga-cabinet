@@ -6,25 +6,6 @@ interface StatsGridProps {
   balanceRubles: number;
 }
 
-const ChevronIcon = () => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 16 16"
-    fill="none"
-    style={{ flexShrink: 0 }}
-    aria-hidden="true"
-  >
-    <path
-      d="M6 4l4 4-4 4"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 const WalletIcon = () => (
   <svg
     width="28"
@@ -105,7 +86,6 @@ export default function StatsGrid({ balanceRubles }: StatsGridProps) {
       description: `${formatAmount(balanceRubles)} ${currencySymbol} · ${t('dashboard.simple.balanceHint')}`,
       to: '/balance',
       icon: WalletIcon,
-      tone: 'bg-accent-500/15 text-accent-300',
       onboarding: 'balance',
     },
     {
@@ -113,49 +93,47 @@ export default function StatsGrid({ balanceRubles }: StatsGridProps) {
       description: t('dashboard.simple.accountsHint'),
       to: '/profile/accounts',
       icon: LinkAccountsIcon,
-      tone: 'bg-blue-500/15 text-blue-300',
     },
     {
       title: t('dashboard.simple.supportTitle'),
       description: `${t('dashboard.simple.supportValue').toLocaleLowerCase()} ${t('dashboard.simple.supportHint')}`,
       to: '/support',
       icon: HelpIcon,
-      tone: 'bg-success-500/15 text-success-300',
     },
     {
       title: t('dashboard.simple.referralTitle'),
       description: t('dashboard.simple.referralHint'),
       to: '/referral',
       icon: PeopleIcon,
-      tone: 'bg-warning-500/15 text-warning-300',
     },
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="napkin-rows">
       {cards.map((card, i) => (
         <Link
           key={i}
           to={card.to}
-          className="group flex min-h-[88px] items-center gap-4 rounded-2xl border border-dark-700/60 bg-dark-900/70 p-4 transition-colors hover:border-accent-500/50 hover:bg-dark-850"
+          className="group grid min-h-[72px] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3.5 rounded-lg px-1 py-3 transition-colors hover:bg-dark-900"
           data-onboarding={card.onboarding}
         >
-          <div
-            className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl ${card.tone}`}
-          >
+          <span className="flex h-11 w-11 items-center justify-center text-accent-500">
             <card.icon />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="text-lg font-bold leading-tight text-dark-50">{card.title}</div>
-            <div className="mt-1 text-sm font-normal leading-snug text-dark-400">
+          </span>
+          <span className="min-w-0">
+            <span className="block text-lg font-semibold leading-tight text-dark-100">
+              {card.title}
+            </span>
+            <span className="mt-0.5 block text-sm leading-snug text-dark-400">
               {card.description}
-            </div>
-          </div>
-
-          <div className="text-dark-500 transition-colors group-hover:text-accent-300">
-            <ChevronIcon />
-          </div>
+            </span>
+          </span>
+          <span
+            className="font-hand text-3xl text-accent-500 transition-transform group-hover:translate-x-1"
+            aria-hidden="true"
+          >
+            →
+          </span>
         </Link>
       ))}
     </div>

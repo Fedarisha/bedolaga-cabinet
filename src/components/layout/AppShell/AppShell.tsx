@@ -133,7 +133,7 @@ export function AppShell({ children }: AppShellProps) {
         onClick={handleNavClick}
         aria-label={label}
         className={cn(
-          'relative flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
+          'relative flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[15px] font-medium transition-colors duration-200',
           active
             ? admin
               ? 'text-warning-300'
@@ -147,11 +147,10 @@ export function AppShell({ children }: AppShellProps) {
           <motion.span
             layoutId="desktop-nav-active"
             className={cn(
-              // Подсветка-пилюля активного пункта — «приподнята» над треком капсулы
-              'absolute inset-0 rounded-full shadow-sm',
+              // «Салфетка»: активный пункт подчёркнут маркером, который переезжает между пунктами
               admin
-                ? 'bg-warning-500/15 ring-1 ring-warning-500/20'
-                : 'bg-dark-700/80 ring-1 ring-dark-600/40',
+                ? 'absolute inset-0 rounded-full bg-warning-500/15 ring-1 ring-warning-500/20'
+                : 'absolute inset-x-2 bottom-1 h-2.5 rounded-sm bg-marker',
             )}
             transition={{ type: 'spring', stiffness: 500, damping: 35 }}
           />
@@ -178,7 +177,7 @@ export function AppShell({ children }: AppShellProps) {
           скроллбара, и капсула по центру прыгала бы на полширины скроллбара при
           переходах между страницами со скроллом и без. 100vw даёт ту же ось
           центрирования, что и у body (тоже 100vw). */}
-      <header className="fixed left-0 top-0 z-50 hidden w-screen border-b border-dark-800/50 bg-dark-950/95 lg:block">
+      <header className="fixed left-0 top-0 z-50 hidden w-screen border-b-[1.5px] border-dashed border-dark-700 bg-dark-950/95 backdrop-blur lg:block">
         {/* 3-зонный grid: лого | капсула | действия. Колонки 1fr_auto_1fr держат
             капсулу строго по центру вьюпорта НЕЗАВИСИМО от ширины лого/действий,
             а действия — у правого края. Поэтому ничего не «скачет» при переходах
@@ -210,7 +209,9 @@ export function AppShell({ children }: AppShellProps) {
                 />
               )}
             </div>
-            <span className="text-base font-semibold text-dark-100">{appName}</span>
+            <span className="font-display text-base font-extrabold tracking-wide text-dark-100">
+              {appName}
+            </span>
           </Link>
 
           {/* Navigation — единая «капсула» (segmented control): все пункты видны

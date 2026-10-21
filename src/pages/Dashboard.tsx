@@ -5,20 +5,18 @@ import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/rea
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
-import { displayName } from '../utils/displayName';
 import { useBlockingStore } from '../store/blocking';
 import { subscriptionApi } from '../api/subscription';
 import { referralApi } from '../api/referral';
 import { balanceApi } from '../api/balance';
 import { wheelApi } from '../api/wheel';
 import Onboarding, { useOnboarding } from '../components/Onboarding';
-import SubscriptionCardActive from '../components/dashboard/SubscriptionCardActive';
+import NapkinStatus, { type NapkinSubscription } from '../components/dashboard/NapkinStatus';
 import SubscriptionCardExpired from '../components/dashboard/SubscriptionCardExpired';
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import { giftApi } from '../api/gift';
 import PendingGiftCard from '../components/dashboard/PendingGiftCard';
-import SubscriptionListCard from '../components/subscription/SubscriptionListCard';
 import { API } from '../config/constants';
 import type { Subscription, SubscriptionListItem } from '../types';
 import {
@@ -46,54 +44,6 @@ type DashboardSubscriptionChoice = {
   deviceLimit: number;
   devicesLoading: boolean;
 };
-
-const RenewIcon = () => (
-  <svg
-    className="h-6 w-6"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-    <path d="M21 3v6h-6" />
-  </svg>
-);
-
-const DeviceIcon = () => (
-  <svg
-    className="h-6 w-6"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <rect x="6" y="2" width="12" height="20" rx="2" />
-    <path d="M12 18h.01" />
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg
-    className="h-6 w-6"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M12 5v14" />
-    <path d="M5 12h14" />
-  </svg>
-);
 
 function subscriptionChoiceFromListItem(
   subscription: SubscriptionListItem,
@@ -362,7 +312,6 @@ export default function Dashboard() {
     setShowOnboarding(false);
   };
 
-  const userDisplayName = displayName(user);
   const hasExistingSubscriptions = (multiSubData?.subscriptions?.length ?? 0) > 0;
   const hasAnySubscription = hasExistingSubscriptions || !!subscription;
   const dashboardSubscriptions = useMemo<DashboardSubscriptionChoice[]>(() => {
@@ -393,6 +342,46 @@ export default function Dashboard() {
 
     return [];
   }, [devicesData, multiSubData, multiSubscriptionDeviceQueries, subscription, t]);
+
+  const napkinItems = useMemo<NapkinSubscription[]>(() => {
+    if (isMultiTariff) {
+      return (multiSubData?.subscriptions ?? []).map((sub, index) => ({
+        sub,
+        usedDevices: multiSubscriptionDeviceQueries[index]?.data?.total,
+      }));
+    }
+    if (!subscription) return [];
+    return [
+      {
+        sub: {
+          id: subscription.id,
+          name: subscription.name ?? null,
+          status: subscription.status,
+          tariff_id: subscription.tariff_id ?? null,
+          tariff_name: subscription.tariff_name ?? null,
+          traffic_limit_gb: subscription.traffic_limit_gb,
+          traffic_used_gb: trafficData?.traffic_used_gb ?? subscription.traffic_used_gb,
+          device_limit: subscription.device_limit,
+          end_date: subscription.end_date,
+          subscription_url: subscription.subscription_url,
+          subscription_crypto_link: null,
+          is_trial: subscription.is_trial,
+          is_daily: subscription.is_daily,
+          is_daily_paused: subscription.is_daily_paused,
+          autopay_enabled: subscription.autopay_enabled,
+          connected_squads: subscription.connected_squads,
+        },
+        usedDevices: devicesData?.total,
+      },
+    ];
+  }, [
+    isMultiTariff,
+    multiSubData,
+    multiSubscriptionDeviceQueries,
+    subscription,
+    trafficData,
+    devicesData,
+  ]);
 
   const navigateToSubscriptionAction = (
     action: DashboardSubscriptionAction,
@@ -443,237 +432,158 @@ export default function Dashboard() {
     });
   };
 
-  const actionButtonClass =
-    'flex min-h-[68px] items-center gap-3 rounded-2xl border border-dark-700/60 bg-dark-900/70 p-3 text-left transition-colors active:bg-dark-800 sm:min-h-[78px] sm:p-4 sm:hover:border-accent-500/50 sm:hover:bg-dark-850';
-
   return (
-    <div className="space-y-5">
-      <div data-onboarding="welcome">
-        {userDisplayName && (
-          <h1 className="text-3xl font-bold leading-tight text-dark-50">
-            {t('dashboard.simple.helloWithName', { name: userDisplayName })}
-          </h1>
-        )}
-      </div>
+    <div className="pt-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-12">
+      <div className="space-y-6">
+        <h1 className="sr-only">{t('nav.dashboard', 'Главная')}</h1>
 
-      {pendingGifts && pendingGifts.length > 0 && <PendingGiftCard gifts={pendingGifts} />}
+        {pendingGifts && pendingGifts.length > 0 && <PendingGiftCard gifts={pendingGifts} />}
 
-      {/* Multi-tariff: show subscription cards (max 3) — только когда подписки
-          реально есть. Пустой случай (нет подписок) ведёт блок ниже (триал/покупка),
-          иначе кнопка покупки дублировалась. */}
-      {isMultiTariff && multiSubData?.subscriptions && multiSubData.subscriptions.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xl font-bold text-dark-50">
-              {t('dashboard.subscriptions', 'Подписки')}
-            </span>
-            <Link to="/subscriptions" className="text-base font-semibold text-accent-300">
-              {t('dashboard.manageAll', 'Управление')} →
-            </Link>
+        {/* Салфетка со статусом. В классическом режиме истёкшая подписка остаётся на своей
+          карточке: там быстрое продление с баланса. */}
+        {!isMultiTariff && subLoading ? (
+          <div className="napkin">
+            <div className="skeleton mb-3 h-8 w-48" />
+            <div className="skeleton mb-4 h-4 w-40" />
+            <div className="skeleton h-12 w-full" />
           </div>
-          {multiSubData.subscriptions.slice(0, 3).map((sub) => (
-            <SubscriptionListCard
-              key={sub.id}
-              subscription={sub}
-              onClick={() => navigate(`/subscriptions/${sub.id}`)}
-            />
-          ))}
-          {multiSubData.subscriptions.length > 3 && (
-            <Link
-              to="/subscriptions"
-              className="flex w-full items-center justify-center rounded-2xl border border-dashed border-white/20 p-4 text-base font-semibold text-dark-300"
-            >
-              {t('dashboard.showAll', 'Показать все')} ({multiSubData.subscriptions.length})
-            </Link>
-          )}
-        </div>
-      )}
-
-      {/* Subscription Status Card — hidden in multi-tariff (managed via /subscriptions) */}
-      {!isMultiTariff &&
-        (subLoading ? (
-          <div className="bento-card">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="skeleton h-5 w-20" />
-              <div className="skeleton h-6 w-16 rounded-full" />
-            </div>
-            <div className="skeleton mb-3 h-10 w-32" />
-            <div className="skeleton mb-3 h-4 w-40" />
-            <div className="skeleton h-3 w-full rounded-full" />
-            <div className="mt-5">
-              <div className="skeleton h-12 w-full rounded-xl" />
-            </div>
-          </div>
-        ) : subscription?.is_expired ||
-          subscription?.status === 'disabled' ||
-          subscription?.is_limited ? (
+        ) : !isMultiTariff &&
+          (subscription?.is_expired ||
+            subscription?.status === 'disabled' ||
+            subscription?.is_limited) ? (
           <SubscriptionCardExpired
             subscription={subscription}
             balanceKopeks={balanceData?.balance_kopeks ?? 0}
             balanceRubles={balanceData?.balance_rubles ?? 0}
           />
-        ) : subscription ? (
-          <SubscriptionCardActive
-            subscription={subscription}
-            trafficData={trafficData}
-            refreshTrafficMutation={refreshTrafficMutation}
-            trafficRefreshCooldown={trafficRefreshCooldown}
-            connectedDevices={devicesData?.total ?? 0}
-          />
-        ) : null)}
+        ) : (
+          <NapkinStatus items={napkinItems} />
+        )}
 
-      {(isMultiTariff
-        ? multiSubData?.subscriptions !== undefined
-        : dashboardSubscriptions.length > 0) && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Link to="/subscription/purchase?from=dashboard" className={actionButtonClass}>
-              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-accent-500/15 text-accent-300 sm:h-12 sm:w-12">
-                <PlusIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-base font-bold leading-tight text-dark-50 sm:text-lg">
-                  {hasAnySubscription
-                    ? t('subscriptions.buyAnother', 'Купить ещё подписку')
-                    : t('subscriptions.buySubscription', 'Купить подписку')}
-                </span>
-              </span>
-              <span className="text-dark-500">
-                <ChevronRightIcon />
-              </span>
-            </Link>
-
-            {dashboardSubscriptions.length > 0 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => handleSubscriptionAction('renew')}
-                  className={actionButtonClass}
-                >
-                  <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-accent-500/15 text-accent-300 sm:h-12 sm:w-12">
-                    <RenewIcon />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-base font-bold leading-tight text-dark-50 sm:text-lg">
-                      {t('dashboard.simple.renewMain')}
-                    </span>
-                  </span>
-                  <span className="text-dark-500">
-                    <ChevronRightIcon />
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSubscriptionAction('connect')}
-                  disabled={
-                    dashboardSubscriptions.length === 1 && dashboardSubscriptions[0].devicesLoading
-                  }
-                  className={actionButtonClass}
-                >
-                  <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-success-500/15 text-success-300 sm:h-12 sm:w-12">
-                    <DeviceIcon />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-base font-bold leading-tight text-dark-50 sm:text-lg">
-                      {t('dashboard.simple.connectDeviceMain')}
-                    </span>
-                  </span>
-                  <span className="text-dark-500">
-                    <ChevronRightIcon />
-                  </span>
-                </button>
-              </>
-            )}
-          </div>
-
-          <Sheet
-            open={subscriptionAction !== null && dashboardSubscriptions.length > 1}
-            onOpenChange={(open) => {
-              if (!open) setSubscriptionAction(null);
-            }}
-          >
-            <SheetContent className="mx-auto max-w-lg rounded-t-3xl" showCloseButton>
-              <SheetHeader className="px-0 text-left">
-                <SheetTitle>{t('dashboard.simple.chooseSubscription')}</SheetTitle>
-                <SheetDescription>
-                  {subscriptionAction === 'renew'
-                    ? t('dashboard.simple.chooseForRenew')
-                    : t('dashboard.simple.chooseForConnect')}
-                </SheetDescription>
-              </SheetHeader>
-
-              <div className="mt-4 space-y-2">
-                {dashboardSubscriptions.map((sub) => (
+        {(isMultiTariff
+          ? multiSubData?.subscriptions !== undefined
+          : dashboardSubscriptions.length > 0) && (
+          <div className="space-y-3">
+            <div className="grid gap-3.5" data-onboarding="connect-devices">
+              {dashboardSubscriptions.length > 0 && (
+                <>
                   <button
-                    key={sub.id}
                     type="button"
-                    onClick={() =>
-                      subscriptionAction && navigateToSubscriptionAction(subscriptionAction, sub)
+                    onClick={() => handleSubscriptionAction('connect')}
+                    disabled={
+                      dashboardSubscriptions.length === 1 &&
+                      dashboardSubscriptions[0].devicesLoading
                     }
-                    disabled={subscriptionAction === 'connect' && sub.devicesLoading}
-                    className="flex min-h-[64px] w-full items-center justify-between gap-3 rounded-2xl border border-dark-700/60 bg-dark-800/80 p-4 text-left transition-colors active:bg-dark-700/80 sm:hover:border-accent-500/40 sm:hover:bg-dark-800"
+                    className="napkin-btn"
                   >
-                    <span className="min-w-0">
-                      <span className="block truncate text-base font-semibold text-dark-100">
-                        {sub.title}
-                      </span>
-                      {getSubscriptionChoiceSubtitle(sub) && (
-                        <span className="mt-0.5 block truncate text-sm text-dark-400">
-                          {getSubscriptionChoiceSubtitle(sub)}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-dark-500">
-                      <ChevronRightIcon />
-                    </span>
+                    {t('dashboard.simple.connectMain')}
                   </button>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSubscriptionAction(null)}
-                className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-dark-800 px-4 text-base font-semibold text-dark-200 transition-colors active:bg-dark-700/80 sm:hover:bg-dark-700"
-              >
-                {t('common.cancel')}
-              </button>
-            </SheetContent>
-          </Sheet>
-        </div>
-      )}
-
-      {/* Trial Activation */}
-      {hasNoSubscription && !trialLoading && trialInfo?.is_available && (
-        <TrialOfferCard
-          trialInfo={trialInfo}
-          balanceKopeks={balanceData?.balance_kopeks || 0}
-          balanceRubles={balanceData?.balance_rubles || 0}
-          activateTrialMutation={activateTrialMutation}
-          trialError={trialError}
-        />
-      )}
-
-      <h2 className="pt-1 text-xl font-bold text-dark-50">{t('dashboard.simple.useful')}</h2>
-      <StatsGrid balanceRubles={balanceData?.balance_rubles || 0} />
-
-      {wheelConfig?.is_enabled && (
-        <Link
-          to="/wheel"
-          className="group flex items-center justify-between rounded-2xl border border-dark-700/60 bg-dark-900/70 p-4"
-        >
-          <div className="flex items-center gap-4">
-            <span className="text-3xl">🎰</span>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-bold text-dark-100">{t('wheel.banner.title')}</h3>
-              <p className="text-sm text-dark-400">{t('wheel.banner.description')}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleSubscriptionAction('renew')}
+                    className="napkin-btn-line"
+                  >
+                    {t('dashboard.simple.renewMain')}
+                  </button>
+                </>
+              )}
+              <Link to="/subscription/purchase?from=dashboard" className="napkin-btn-line">
+                {hasAnySubscription
+                  ? t('subscriptions.buyAnother', 'Купить ещё подписку')
+                  : t('subscriptions.buySubscription', 'Купить подписку')}
+              </Link>
             </div>
+
+            <Sheet
+              open={subscriptionAction !== null && dashboardSubscriptions.length > 1}
+              onOpenChange={(open) => {
+                if (!open) setSubscriptionAction(null);
+              }}
+            >
+              <SheetContent className="mx-auto max-w-lg rounded-t-3xl" showCloseButton>
+                <SheetHeader className="px-0 text-left">
+                  <SheetTitle>{t('dashboard.simple.chooseSubscription')}</SheetTitle>
+                  <SheetDescription>
+                    {subscriptionAction === 'renew'
+                      ? t('dashboard.simple.chooseForRenew')
+                      : t('dashboard.simple.chooseForConnect')}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="napkin-rows mt-3">
+                  {dashboardSubscriptions.map((sub) => (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() =>
+                        subscriptionAction && navigateToSubscriptionAction(subscriptionAction, sub)
+                      }
+                      disabled={subscriptionAction === 'connect' && sub.devicesLoading}
+                      className="flex min-h-[64px] w-full items-center justify-between gap-3 rounded-lg px-1 py-3 text-left transition-colors hover:bg-dark-900 disabled:opacity-50"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-base font-semibold text-dark-100">
+                          {sub.title}
+                        </span>
+                        {getSubscriptionChoiceSubtitle(sub) && (
+                          <span className="mt-0.5 block truncate text-sm text-dark-400">
+                            {getSubscriptionChoiceSubtitle(sub)}
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-hand text-3xl text-accent-500" aria-hidden="true">
+                        →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSubscriptionAction(null)}
+                  className="napkin-btn-line mt-4"
+                >
+                  {t('common.cancel')}
+                </button>
+              </SheetContent>
+            </Sheet>
           </div>
-          <div className="flex-shrink-0 text-dark-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent-400">
-            <ChevronRightIcon />
-          </div>
-        </Link>
-      )}
+        )}
+
+        {/* Trial Activation */}
+        {hasNoSubscription && !trialLoading && trialInfo?.is_available && (
+          <TrialOfferCard
+            trialInfo={trialInfo}
+            balanceKopeks={balanceData?.balance_kopeks || 0}
+            balanceRubles={balanceData?.balance_rubles || 0}
+            activateTrialMutation={activateTrialMutation}
+            trialError={trialError}
+          />
+        )}
+      </div>
+
+      <div className="mt-6 space-y-2 lg:mt-0">
+        <h2 className="napkin-label pt-4 lg:pt-1">{t('dashboard.napkin.more')}</h2>
+        <StatsGrid balanceRubles={balanceData?.balance_rubles || 0} />
+
+        {wheelConfig?.is_enabled && (
+          <Link
+            to="/wheel"
+            className="group flex items-center justify-between rounded-2xl border border-dark-700/60 bg-dark-900/70 p-4"
+          >
+            <div className="flex items-center gap-4">
+              <span className="text-3xl">🎰</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold text-dark-100">{t('wheel.banner.title')}</h3>
+                <p className="text-sm text-dark-400">{t('wheel.banner.description')}</p>
+              </div>
+            </div>
+            <div className="flex-shrink-0 text-dark-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent-400">
+              <ChevronRightIcon />
+            </div>
+          </Link>
+        )}
+      </div>
 
       {showOnboarding && (
         <Onboarding

@@ -45,6 +45,9 @@ export default {
           900: withOpacity('--color-champagne-900'),
           950: withOpacity('--color-champagne-950'),
         },
+        // Жёлтый маркер-выделитель «салфетки» (globals.css → --napkin-marker)
+        marker: withOpacity('--napkin-marker'),
+        'marker-soft': withOpacity('--napkin-marker-soft'),
         // Readable text on top of status-colored fills (computed from the
         // operator palette in useThemeColors — black or white, whichever reads)
         'on-accent': withOpacity('--color-on-accent'),
@@ -121,7 +124,7 @@ export default {
         // so it never affects any other glyph). Global root fix for flags everywhere.
         sans: [
           'Twemoji Country Flags',
-          'Manrope',
+          'Golos Text',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -129,8 +132,10 @@ export default {
           'Roboto',
           'sans-serif',
         ],
-        display: ['Twemoji Country Flags', 'Outfit', 'Manrope', 'system-ui', 'sans-serif'],
-        mono: ['Twemoji Country Flags', 'IBM Plex Mono', 'ui-monospace', 'monospace'],
+        // «Салфетка»: широкий гротеск для заголовков, рукописный для пометок ручкой.
+        display: ['Twemoji Country Flags', 'Unbounded', 'Golos Text', 'system-ui', 'sans-serif'],
+        hand: ['Caveat', 'Comic Sans MS', 'cursive'],
+        mono: ['Twemoji Country Flags', 'JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         bento: '24px',
