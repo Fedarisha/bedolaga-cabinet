@@ -50,7 +50,7 @@ import {
   lavaUiState,
   type LavaUiState,
 } from '../utils/lavaRecurring';
-import Twemoji from 'react-twemoji';
+import Twemoji from '@/lib/twemoji';
 import { DeviceTopupSheet } from '../components/subscription/sheets/DeviceTopupSheet';
 import { DeviceReductionSheet } from '../components/subscription/sheets/DeviceReductionSheet';
 import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopupSheet';

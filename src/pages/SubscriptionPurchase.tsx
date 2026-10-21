@@ -21,7 +21,7 @@ import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { useCurrency } from '../hooks/useCurrency';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { CheckIcon } from '../components/icons';
-import Twemoji from 'react-twemoji';
+import Twemoji from '@/lib/twemoji';
 import {
   getErrorMessage,
   getInsufficientBalanceError,
