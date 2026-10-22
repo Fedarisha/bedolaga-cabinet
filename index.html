@@ -49,6 +49,42 @@
       />
     </noscript>
     <script>
+      // Встроенные функции, которых нет в Safari 14–15 и старых Chrome, а библиотеки
+      // (Radix, Telegram SDK, recharts) их вызывают. Синтаксис сборка понижает сама
+      // (build.target в vite.config.ts), а функции — нет.
+      (function () {
+        function define(obj, name, fn) {
+          if (obj && !obj[name]) {
+            Object.defineProperty(obj, name, { value: fn, writable: true, configurable: true });
+          }
+        }
+        define(Object, 'hasOwn', function (o, k) {
+          return Object.prototype.hasOwnProperty.call(Object(o), k);
+        });
+        function at(i) {
+          var n = Math.trunc(i) || 0;
+          if (n < 0) n += this.length;
+          return n < 0 || n >= this.length ? undefined : this[n];
+        }
+        define(Array.prototype, 'at', at);
+        define(String.prototype, 'at', at);
+        define(Array.prototype, 'findLast', function (fn, thisArg) {
+          for (var i = this.length - 1; i >= 0; i--) if (fn.call(thisArg, this[i], i, this)) return this[i];
+          return undefined;
+        });
+        define(Array.prototype, 'findLastIndex', function (fn, thisArg) {
+          for (var i = this.length - 1; i >= 0; i--) if (fn.call(thisArg, this[i], i, this)) return i;
+          return -1;
+        });
+        define(Array.prototype, 'toSorted', function (cmp) {
+          return Array.prototype.slice.call(this).sort(cmp);
+        });
+        define(Array.prototype, 'toReversed', function () {
+          return Array.prototype.slice.call(this).reverse();
+        });
+      })();
+    </script>
+    <script>
       // Load Telegram Web App script only inside Telegram environment
       (function () {
         var isTelegram =
@@ -308,12 +344,11 @@
 
           fallbackShown = true;
           root.innerHTML =
-            '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;color:#e5e7eb;font-family:system-ui,sans-serif">' +
+            '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:#f4f4ef;color:#23252b;font-family:system-ui,sans-serif">' +
             '<div style="max-width:420px;text-align:center">' +
-            '<div style="font-size:36px;margin-bottom:16px">⚠️</div>' +
-            '<h1 style="font-size:20px;margin:0 0 10px">Не удалось загрузить кабинет</h1>' +
-            '<p style="color:#9ca3af;line-height:1.5;margin:0 0 20px">Проверьте соединение и попробуйте ещё раз.</p>' +
-            '<button type="button" onclick="window.location.reload()" style="border:0;border-radius:12px;background:#0ea5e9;color:white;padding:12px 22px;font-size:15px;cursor:pointer">Повторить</button>' +
+            '<h1 style="font-size:24px;margin:0 0 12px">Не удалось загрузить кабинет</h1>' +
+            '<p style="color:#5d606a;font-size:17px;line-height:1.5;margin:0 0 24px">Проверьте интернет и нажмите «Повторить». Если не помогает, откройте сайт в другом браузере или обновите телефон.</p>' +
+            '<button type="button" onclick="window.location.reload()" style="border:2px solid #1d3c9e;border-radius:14px;background:#1d3c9e;color:#fff;padding:14px 28px;font-size:17px;font-weight:600;cursor:pointer;box-shadow:4px 4px 0 #ff9d4d">Повторить</button>' +
             '</div></div>';
         }
 

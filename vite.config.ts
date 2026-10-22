@@ -80,6 +80,11 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      // Vite 8 по умолчанию собирает под Safari 16.4+/Chrome 111+ и оставляет, например,
+      // статические блоки классов (static {…}) как есть. Safari до 16.4 (iPhone 6s/7/SE
+      // застряли на iOS 15) не может разобрать такой чанк, кабинет не стартует и
+      // показывает «Не удалось загрузить кабинет». Цель как у Vite до 7-й версии.
+      target: ['es2020', 'safari14', 'chrome87', 'firefox78', 'edge88'],
       outDir: 'dist',
       sourcemap: false,
       chunkSizeWarningLimit: 550,
