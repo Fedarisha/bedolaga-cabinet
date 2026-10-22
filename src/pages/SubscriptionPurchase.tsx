@@ -1427,9 +1427,11 @@ export default function SubscriptionPurchase() {
                                     </span>
                                   )}
                                 </div>
-                                <div className="mt-0.5 font-hand text-xl leading-none text-accent-500">
-                                  {formatPrice(displayPerMonth)}/{t('subscription.month')}
-                                </div>
+                                {period.days > 30 && (
+                                  <div className="mt-0.5 font-hand text-xl leading-none text-accent-500">
+                                    {formatPrice(displayPerMonth)}/{t('subscription.month')}
+                                  </div>
+                                )}
                               </button>
                             );
                           })}

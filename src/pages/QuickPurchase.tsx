@@ -176,55 +176,59 @@ function DailyDaysPicker({ days, onChange }: { days: number; onChange: (v: numbe
     if (Number.isNaN(parsed)) return;
     onChange(clamp(parsed));
   };
+  const stepBtn =
+    'flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px_15px_13px_16px] border-2 border-dark-100 text-xl text-dark-100 transition-colors hover:bg-marker-soft disabled:cursor-not-allowed disabled:opacity-40';
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-marker-soft p-4">
-      <span className="text-base font-semibold text-dark-100">
-        {t('landing.daysCount', 'Количество дней')}
-      </span>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onChange(clamp(days - 1))}
-          disabled={days <= DAILY_MIN_DAYS}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-dark-800/70 text-lg text-dark-100 transition-colors hover:bg-dark-700/70 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="-"
-        >
-          −
-        </button>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={days}
-          onChange={(e) => setFromInput(e.target.value)}
-          className="h-9 w-16 rounded-lg border border-dark-700/50 bg-dark-800/50 text-center text-sm font-semibold text-dark-50 outline-none focus:border-accent-500/50"
-        />
-        <button
-          type="button"
-          onClick={() => onChange(clamp(days + 1))}
-          disabled={days >= DAILY_MAX_DAYS}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-dark-800/70 text-lg text-dark-100 transition-colors hover:bg-dark-700/70 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="+"
-        >
-          +
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {[7, 30, 90, 180].map((preset) => (
+    <div className="mt-4 rounded-[14px_18px_15px_17px] border-2 border-dark-100 p-4">
+      <div className="napkin-label mb-3">{t('landing.daysCount', 'Количество дней')}</div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <div className="flex items-center gap-2">
           <button
-            key={preset}
             type="button"
-            onClick={() => onChange(preset)}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              days === preset
-                ? 'bg-accent-500 text-white'
-                : 'bg-dark-800/50 text-dark-300 hover:bg-dark-700/50',
-            )}
+            onClick={() => onChange(clamp(days - 1))}
+            disabled={days <= DAILY_MIN_DAYS}
+            className={stepBtn}
+            aria-label="-"
           >
-            {preset}
+            −
           </button>
-        ))}
+          <input
+            type="text"
+            inputMode="numeric"
+            value={days}
+            onChange={(e) => setFromInput(e.target.value)}
+            aria-label={t('landing.daysCount', 'Количество дней')}
+            className="h-11 w-20 border-0 border-b-2 border-dark-100 bg-transparent text-center font-mono text-2xl font-bold text-dark-50 outline-none focus:border-accent-500"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(clamp(days + 1))}
+            disabled={days >= DAILY_MAX_DAYS}
+            className={stepBtn}
+            aria-label="+"
+          >
+            +
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[7, 30, 90, 180].map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => onChange(preset)}
+              aria-pressed={days === preset}
+              className={cn(
+                'min-h-[36px] rounded-[10px_13px_11px_14px] border-2 px-3 text-sm font-medium transition-colors',
+                days === preset
+                  ? 'border-accent-500 bg-marker-soft text-dark-50'
+                  : 'border-dark-100 text-dark-300 hover:bg-marker-soft',
+              )}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
