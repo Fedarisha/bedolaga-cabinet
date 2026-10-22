@@ -322,54 +322,21 @@ export default function Home() {
         </section>
 
         {/* Что внутри */}
-        <section className="py-14 md:py-28" aria-labelledby="inside-title">
-          <div className="mx-auto grid max-w-6xl gap-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-24">
+        <section className="py-14 md:py-24" aria-labelledby="inside-title">
+          <div className="mx-auto max-w-6xl pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
             <h2
               id="inside-title"
-              className="self-start font-display text-[clamp(32px,5vw,56px)] font-extrabold leading-[1.02] md:sticky md:top-28"
+              className="mb-8 font-display text-[clamp(32px,5vw,56px)] font-extrabold leading-[1.02] md:mb-12"
             >
               {t('home.napkin.insideTitle')}
             </h2>
-            <ul className="m-0 list-none p-0">
-              {FEATURES.map((key, i) => (
-                <li
-                  key={key}
-                  className={cn(
-                    'group grid grid-cols-[40px_minmax(0,1fr)] gap-4 border-b-[1.5px] border-dashed border-dark-700 py-5',
-                    i % 2 === 1 && 'md:ml-12',
-                  )}
-                >
-                  <svg
-                    viewBox="0 0 34 34"
-                    className="mt-0.5 h-[34px] w-[34px] text-accent-500"
-                    aria-hidden="true"
-                  >
-                    <rect
-                      x="2"
-                      y="2"
-                      width="30"
-                      height="30"
-                      rx="5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <path
-                      pathLength={1}
-                      d="M8 17.5 14.5 24 27 9"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      className="[stroke-dasharray:1] [stroke-dashoffset:1] transition-[stroke-dashoffset] duration-500 group-hover:[stroke-dashoffset:0]"
-                    />
-                  </svg>
-                  <div>
-                    <h3 className="mb-1 text-xl font-semibold">
-                      {t(`home.napkin.features.${key}.title`)}
-                    </h3>
-                    <p className="m-0 text-dark-400">{t(`home.napkin.features.${key}.text`)}</p>
-                  </div>
+            <ul className="m-0 grid list-none gap-x-12 p-0 md:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map((key) => (
+                <li key={key} className="border-t-[1.5px] border-dashed border-dark-700 py-5">
+                  <h3 className="mb-1 text-xl font-semibold">
+                    {t(`home.napkin.features.${key}.title`)}
+                  </h3>
+                  <p className="m-0 text-dark-400">{t(`home.napkin.features.${key}.text`)}</p>
                 </li>
               ))}
             </ul>
