@@ -14,7 +14,7 @@ import { cn } from '../lib/utils';
  * работает VPN, тарифы — меню с точками до цены. Тексты короткие и по делу.
  */
 
-const FEATURES = ['security', 'speed', 'ruDirect', 'devices', 'noLogs', 'support'] as const;
+const FAQ = ['ruSites', 'devices', 'deviceCount', 'speed', 'history', 'help'] as const;
 const STEPS = ['login', 'pay', 'connect'] as const;
 const CIRCLE_TILT = [-8, 6, -3];
 
@@ -321,25 +321,33 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Что внутри */}
-        <section className="py-14 md:py-24" aria-labelledby="inside-title">
-          <div className="mx-auto max-w-6xl pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
+        {/* Частые вопросы */}
+        <section className="py-14 md:py-28" aria-labelledby="faq-title">
+          <div className="mx-auto grid max-w-6xl gap-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-24">
             <h2
-              id="inside-title"
-              className="mb-8 font-display text-[clamp(32px,5vw,56px)] font-extrabold leading-[1.02] md:mb-12"
+              id="faq-title"
+              className="self-start font-display text-[clamp(32px,5vw,56px)] font-extrabold leading-[1.02] md:sticky md:top-28"
             >
-              {t('home.napkin.insideTitle')}
+              {t('home.napkin.faqTitle')}
             </h2>
-            <ul className="m-0 grid list-none gap-x-12 p-0 md:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((key) => (
-                <li key={key} className="border-t-[1.5px] border-dashed border-dark-700 py-5">
-                  <h3 className="mb-1 text-xl font-semibold">
-                    {t(`home.napkin.features.${key}.title`)}
-                  </h3>
-                  <p className="m-0 text-dark-400">{t(`home.napkin.features.${key}.text`)}</p>
-                </li>
+            <dl className="m-0">
+              {FAQ.map((key) => (
+                <div
+                  key={key}
+                  className="border-b-[1.5px] border-dashed border-dark-700 py-5 first:pt-0"
+                >
+                  <dt className="text-xl font-semibold text-dark-50">
+                    {t(`home.napkin.faq.${key}.q`)}
+                  </dt>
+                  <dd className="m-0 mt-1.5 flex flex-wrap items-baseline gap-x-3 text-[17px] text-dark-400">
+                    <span className="font-hand text-3xl font-bold leading-none text-accent-500">
+                      {t(`home.napkin.faq.${key}.short`)}
+                    </span>
+                    <span>{t(`home.napkin.faq.${key}.a`)}</span>
+                  </dd>
+                </div>
               ))}
-            </ul>
+            </dl>
           </div>
         </section>
 
