@@ -72,7 +72,7 @@ export function AnalyticsTab() {
 
       {/* Yandex Metrika */}
       <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">
-        <div className="mb-1 flex items-center justify-between">
+        <div className="mb-1 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-warning-500/20 to-error-500/20">
               <GlobeIcon className="h-5 w-5 text-warning-400" />
@@ -152,7 +152,7 @@ export function AnalyticsTab() {
         {analytics?.offline_conv_enabled && (
           <>
             <div className="my-5 border-t border-dark-700/30" />
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <TrendUpIcon className="h-4 w-4 text-warning-400" />
                 <span className="text-sm font-medium text-dark-200">
@@ -187,7 +187,7 @@ export function AnalyticsTab() {
                 {analytics.offline_conv_goals.map((goal) => (
                   <div
                     key={goal.event_id}
-                    className="flex items-center justify-between rounded-xl border border-dark-700/30 bg-dark-900/40 px-4 py-2.5"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-dark-700/30 bg-dark-900/40 px-4 py-2.5"
                   >
                     <div className="flex items-center gap-3">
                       <span className="inline-flex h-2 w-2 rounded-full bg-success-400" />
@@ -209,7 +209,7 @@ export function AnalyticsTab() {
 
       {/* Google Ads */}
       <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">
-        <div className="mb-1 flex items-center justify-between">
+        <div className="mb-1 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-500/20 to-success-500/20">
               <TranslateIcon className="h-5 w-5 text-accent-400" />

@@ -45,7 +45,7 @@ export default {
           900: withOpacity('--color-champagne-900'),
           950: withOpacity('--color-champagne-950'),
         },
-        // Жёлтый маркер-выделитель «салфетки» (globals.css → --napkin-marker)
+        // Оранжевый маркер-выделитель «салфетки» (globals.css → --napkin-marker)
         marker: withOpacity('--napkin-marker'),
         'marker-soft': withOpacity('--napkin-marker-soft'),
         // Readable text on top of status-colored fills (computed from the

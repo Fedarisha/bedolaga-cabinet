@@ -140,7 +140,7 @@ export function BackgroundConfigEditor({ value: config, onChange }: BackgroundCo
   return (
     <div className="space-y-6">
       {/* Header with enable toggle */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-dark-100">{t('admin.backgrounds.title')}</h3>
           <p className="text-sm text-dark-400">{t('admin.backgrounds.description')}</p>

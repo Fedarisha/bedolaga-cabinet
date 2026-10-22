@@ -1886,12 +1886,12 @@ input[type="checkbox"]:hover:not(:checked) {
 
 /* ==========================================================================
    «Салфетка» — набросок шариковой ручкой на белой салфетке.
-   Синие чернила (accent-500), графитовый текст, жёлтый маркер. Стоит в конце
+   Синие чернила (accent-500), графитовый текст, оранжевый маркер. Стоит в конце
    файла, чтобы перекрывать светлые варианты компонентов выше.
    ========================================================================== */
 :root {
-  --napkin-marker: 255, 226, 74;
-  --napkin-marker-soft: 255, 243, 166;
+  --napkin-marker: 255, 157, 77;
+  --napkin-marker-soft: 255, 224, 194;
   --napkin-radius: 14px 18px 15px 17px;
   --napkin-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .53 0 0 0 0 .48 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -2033,6 +2033,11 @@ input[type="checkbox"]:hover:not(:checked) {
   }
   .napkin-btn-line:hover:not(:disabled) {
     box-shadow: 4px 4px 0 rgb(var(--napkin-marker-soft));
+  }
+
+  /* Переключатель не сжимается рядом с длинным текстом, иначе дорожка наезжает на описание */
+  [role="switch"] {
+    flex-shrink: 0;
   }
 
   /* Строки-действия, разделённые пунктиром */

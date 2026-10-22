@@ -24,7 +24,7 @@ export function Toggle({
       onClick={onChange}
       disabled={disabled}
       className={cn(
-        'flex min-h-[44px] items-center',
+        'flex min-h-[44px] shrink-0 items-center',
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
         className,
       )}

@@ -129,8 +129,8 @@ export default function Home() {
     <div className="min-h-[100dvh] text-dark-100">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b-[1.5px] border-dashed border-dark-700 bg-dark-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-6 py-3.5 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
-          <Link to="/home" className="flex items-center gap-2.5">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 py-3.5 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
+          <Link to="/home" className="flex min-w-0 items-center gap-2.5">
             <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg">
               <span
                 className={cn(
@@ -152,11 +152,11 @@ export default function Home() {
                 />
               )}
             </span>
-            <span className="font-display text-lg font-extrabold tracking-wide text-dark-100">
+            <span className="truncate font-display text-lg font-extrabold tracking-wide text-dark-100 max-[359px]:text-[15px]">
               {appName}
             </span>
           </Link>
-          <nav className="ml-auto hidden gap-6 text-base font-medium text-dark-400 md:flex">
+          <nav className="ml-auto hidden gap-6 pr-3 text-base font-medium text-dark-400 md:flex">
             <a href="#how" className="hover:text-accent-500">
               {t('home.napkin.navHow')}
             </a>
@@ -172,7 +172,7 @@ export default function Home() {
           </nav>
           <CabinetLink
             to="/"
-            className="napkin-btn !min-h-[44px] !w-auto !px-[18px] !text-base max-md:ml-auto"
+            className="napkin-btn !min-h-[44px] !w-auto shrink-0 !px-[18px] !text-base max-md:ml-auto"
           >
             {t('home.header.cabinetShort')}
           </CabinetLink>
@@ -379,7 +379,7 @@ export default function Home() {
                         aria-pressed={days === activePeriod}
                         onClick={() => setPeriod(days)}
                         className={cn(
-                          'flex-1 rounded-full px-4 py-3 text-base font-semibold transition-colors sm:flex-none',
+                          'min-w-0 flex-1 rounded-full px-3 py-3 text-base font-semibold transition-colors sm:flex-none sm:px-4',
                           days === activePeriod ? 'bg-accent-500 text-on-accent' : 'text-dark-100',
                         )}
                       >
@@ -535,24 +535,26 @@ export default function Home() {
         {/* Поддержка */}
         {(supportTgUrl || supportVk) && (
           <section id="help" className="scroll-mt-20 pb-14 md:pb-28" aria-labelledby="help-title">
-            <div className="mx-auto grid max-w-6xl items-center gap-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-16">
+            <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-16">
               <h2
                 id="help-title"
-                className="font-display text-[clamp(36px,6.4vw,78px)] font-extrabold leading-[1.02]"
+                className="font-display text-[clamp(28px,9vw,78px)] font-extrabold leading-[1.02] md:text-[clamp(36px,6.4vw,78px)]"
               >
                 <span className="hl">{t('nav.support')}</span>
               </h2>
-              <div className="grid gap-3.5">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-3.5">
                 {supportTgUrl && (
                   <a
                     href={supportTgUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-4 rounded-[16px_12px_18px_14px] border-2 border-dark-100 px-5 py-4 transition-[transform,box-shadow] hover:translate-x-1.5 hover:shadow-[-6px_0_0_rgb(var(--napkin-marker))]"
+                    className="flex min-w-0 items-center justify-between gap-4 rounded-[16px_12px_18px_14px] border-2 border-dark-100 px-5 py-4 transition-[transform,box-shadow] hover:translate-x-1.5 hover:shadow-[-6px_0_0_rgb(var(--napkin-marker))]"
                   >
-                    <span>
+                    <span className="min-w-0">
                       <small className="block text-sm text-dark-400">Telegram</small>
-                      <strong className="text-xl font-semibold">{supportTg || 'Telegram'}</strong>
+                      <strong className="block truncate text-lg font-semibold sm:text-xl">
+                        {supportTg || 'Telegram'}
+                      </strong>
                     </span>
                     <span className="font-hand text-3xl text-accent-500" aria-hidden="true">
                       →
@@ -564,11 +566,11 @@ export default function Home() {
                     href={supportVk}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-4 rounded-[16px_12px_18px_14px] border-2 border-dark-100 px-5 py-4 transition-[transform,box-shadow] hover:translate-x-1.5 hover:shadow-[-6px_0_0_rgb(var(--napkin-marker))]"
+                    className="flex min-w-0 items-center justify-between gap-4 rounded-[16px_12px_18px_14px] border-2 border-dark-100 px-5 py-4 transition-[transform,box-shadow] hover:translate-x-1.5 hover:shadow-[-6px_0_0_rgb(var(--napkin-marker))]"
                   >
                     <span className="min-w-0">
                       <small className="block text-sm text-dark-400">{t('home.napkin.vk')}</small>
-                      <strong className="block truncate text-xl font-semibold">
+                      <strong className="block truncate text-lg font-semibold sm:text-xl">
                         {supportVk.replace(/^https?:\/\//, '')}
                       </strong>
                     </span>

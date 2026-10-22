@@ -219,7 +219,7 @@ export function ThemeTab() {
         </h3>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-dark-700/30 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <MoonIcon />
               <span className="text-sm font-medium text-dark-200 sm:text-base">
@@ -236,7 +236,7 @@ export function ThemeTab() {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-dark-700/30 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <SunIcon />
               <span className="text-sm font-medium text-dark-200 sm:text-base">

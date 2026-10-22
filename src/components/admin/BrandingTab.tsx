@@ -318,7 +318,7 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
         </h3>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-dark-700/30 p-4">
             <div>
               <span className="font-medium text-dark-100">{t('admin.settings.liteMode')}</span>
               <p className="text-sm text-dark-400">{t('admin.settings.liteModeDesc')}</p>
@@ -330,7 +330,7 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-dark-700/30 p-4">
             <div>
               <span className="font-medium text-dark-100">
                 {t('admin.settings.autoFullscreen')}
@@ -346,7 +346,7 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-dark-700/30 p-4">
             <div>
               <span className="font-medium text-dark-100">{t('admin.settings.emailAuth')}</span>
               <p className="text-sm text-dark-400">{t('admin.settings.emailAuthDesc')}</p>
@@ -358,7 +358,7 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-dark-700/30 p-4">
             <div>
               <span className="font-medium text-dark-100">{t('admin.settings.giftEnabled')}</span>
               <p className="text-sm text-dark-400">{t('admin.settings.giftEnabledDesc')}</p>
@@ -370,7 +370,7 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-dark-700/30 p-4">
             <div>
               <span className="font-medium text-dark-100">
                 {t('admin.settings.legalFooter', 'Юридический футер')}
