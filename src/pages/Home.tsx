@@ -406,9 +406,45 @@ export default function Home() {
                         )
                       : 0;
                   return (
-                    <li
-                      key={tariff.id}
-                      className="grid grid-cols-1 gap-x-6 gap-y-1.5 border-b-2 border-dark-100 py-7 sm:grid-cols-[minmax(0,1fr)_auto]"
+                    <li key={tariff.id} className="border-b-2 border-dark-100">
+                      <CabinetLink
+                        to="/buy/main"
+                        className="grid grid-cols-1 gap-x-6 gap-y-1.5 py-7 transition-colors hover:bg-dark-900/60 sm:grid-cols-[minmax(0,1fr)_auto]"
+                      >
+                        <div className="flex min-w-0 items-baseline gap-3.5">
+                          <h3 className="whitespace-nowrap font-display text-[clamp(24px,3.4vw,40px)] font-extrabold">
+                            {tariff.name}
+                          </h3>
+                          <span className="hidden min-w-6 flex-1 -translate-y-2 border-b-[3px] border-dotted border-dark-400 sm:block" />
+                        </div>
+                        <div className="whitespace-nowrap font-mono text-[clamp(28px,3.4vw,40px)] font-bold tabular-nums">
+                          {formatPrice(current.price_kopeks)}
+                        </div>
+                        <div className="text-base text-dark-400">
+                          <b className="font-semibold text-dark-100">
+                            {tariff.traffic_limit_gb > 0
+                              ? `${tariff.traffic_limit_gb} ${t('home.pricing.gb')}`
+                              : t('home.pricing.unlimited')}
+                          </b>{' '}
+                          {t('home.napkin.perMonth')} ·{' '}
+                          <b className="font-semibold text-dark-100">
+                            {t('home.pricing.devices', { count: tariff.device_limit })}
+                          </b>
+                        </div>
+                        {save > 0 && (
+                          <div className="-rotate-3 whitespace-nowrap font-hand text-2xl text-accent-500 sm:justify-self-end">
+                            {t('home.napkin.perMonthSave', { price: formatPrice(perMonth), save })}
+                          </div>
+                        )}
+                      </CabinetLink>
+                    </li>
+                  );
+                })}
+                {dailyTariffs.map((tariff) => (
+                  <li key={tariff.id} className="border-b-2 border-dark-100">
+                    <CabinetLink
+                      to="/buy/main"
+                      className="grid grid-cols-1 gap-x-6 gap-y-1.5 py-7 transition-colors hover:bg-dark-900/60 sm:grid-cols-[minmax(0,1fr)_auto]"
                     >
                       <div className="flex min-w-0 items-baseline gap-3.5">
                         <h3 className="whitespace-nowrap font-display text-[clamp(24px,3.4vw,40px)] font-extrabold">
@@ -417,59 +453,27 @@ export default function Home() {
                         <span className="hidden min-w-6 flex-1 -translate-y-2 border-b-[3px] border-dotted border-dark-400 sm:block" />
                       </div>
                       <div className="whitespace-nowrap font-mono text-[clamp(28px,3.4vw,40px)] font-bold tabular-nums">
-                        {formatPrice(current.price_kopeks)}
+                        {formatPrice(tariff.daily_price_kopeks ?? 0)} {t('home.pricing.perDay')}
                       </div>
                       <div className="text-base text-dark-400">
                         <b className="font-semibold text-dark-100">
-                          {tariff.traffic_limit_gb > 0
-                            ? `${tariff.traffic_limit_gb} ${t('home.pricing.gb')}`
-                            : t('home.pricing.unlimited')}
+                          {tariff.traffic_limit_gb} {t('home.pricing.gb')}
                         </b>{' '}
                         {t('home.napkin.perMonth')} ·{' '}
                         <b className="font-semibold text-dark-100">
                           {t('home.pricing.devices', { count: tariff.device_limit })}
                         </b>
                       </div>
-                      {save > 0 && (
-                        <div className="-rotate-3 whitespace-nowrap font-hand text-2xl text-accent-500 sm:justify-self-end">
-                          {t('home.napkin.perMonthSave', { price: formatPrice(perMonth), save })}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-                {dailyTariffs.map((tariff) => (
-                  <li
-                    key={tariff.id}
-                    className="grid grid-cols-1 gap-x-6 gap-y-1.5 border-b-2 border-dark-100 py-7 sm:grid-cols-[minmax(0,1fr)_auto]"
-                  >
-                    <div className="flex min-w-0 items-baseline gap-3.5">
-                      <h3 className="whitespace-nowrap font-display text-[clamp(24px,3.4vw,40px)] font-extrabold">
-                        {tariff.name}
-                      </h3>
-                      <span className="hidden min-w-6 flex-1 -translate-y-2 border-b-[3px] border-dotted border-dark-400 sm:block" />
-                    </div>
-                    <div className="whitespace-nowrap font-mono text-[clamp(28px,3.4vw,40px)] font-bold tabular-nums">
-                      {formatPrice(tariff.daily_price_kopeks ?? 0)} {t('home.pricing.perDay')}
-                    </div>
-                    <div className="text-base text-dark-400">
-                      <b className="font-semibold text-dark-100">
-                        {tariff.traffic_limit_gb} {t('home.pricing.gb')}
-                      </b>{' '}
-                      {t('home.napkin.perMonth')} ·{' '}
-                      <b className="font-semibold text-dark-100">
-                        {t('home.pricing.devices', { count: tariff.device_limit })}
-                      </b>
-                    </div>
-                    <div className="-rotate-3 whitespace-nowrap font-hand text-2xl text-accent-500 sm:justify-self-end">
-                      {t('home.napkin.dailyNote')}
-                    </div>
+                      <div className="-rotate-3 whitespace-nowrap font-hand text-2xl text-accent-500 sm:justify-self-end">
+                        {t('home.napkin.dailyNote')}
+                      </div>
+                    </CabinetLink>
                   </li>
                 ))}
               </ul>
               <div className="mt-7 flex flex-wrap items-center justify-between gap-x-6 gap-y-3.5 text-base text-dark-400">
                 <span>{t('home.napkin.payNote')}</span>
-                <CabinetLink to="/subscription/purchase" className="napkin-btn !w-auto">
+                <CabinetLink to="/buy/main" className="napkin-btn !w-auto">
                   {t('home.napkin.chooseTariff')}
                 </CabinetLink>
               </div>
