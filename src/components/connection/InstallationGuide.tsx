@@ -93,7 +93,6 @@ export default function InstallationGuide({
   const [activePlatformKey, setActivePlatformKey] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<RemnawaveAppClient | null>(null);
   const [platformsOpen, setPlatformsOpen] = useState(false);
-  const [appsOpen, setAppsOpen] = useState(false);
 
   const getLocalizedText = useCallback(
     (text: LocalizedText | undefined): string => {
@@ -323,45 +322,47 @@ export default function InstallationGuide({
         </div>
       )}
 
-      {/* Приложение: первое из настроек, остальные под «другое» */}
+      {/* Приложение: все варианты видны сразу, выбранное залито */}
       {selectedApp && (
         <div>
-          <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 text-lg">
-            <span>
+          {currentPlatformApps.length > 1 ? (
+            <>
+              <div className="mb-3 text-lg">{t('subscription.connection.appPick')}</div>
+              <div
+                className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5"
+                role="radiogroup"
+                aria-label={t('subscription.connection.appPick')}
+              >
+                {currentPlatformApps.map((app, idx) => {
+                  const isSelected = selectedApp?.name === app.name;
+                  return (
+                    <button
+                      key={app.name + idx}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() => setSelectedApp(app)}
+                      className={`relative min-h-[56px] rounded-[14px_18px_15px_17px] border-2 px-3 py-3 text-base font-semibold transition-colors ${
+                        isSelected
+                          ? 'border-accent-500 bg-accent-500 text-on-accent'
+                          : 'border-dark-100 text-dark-100 hover:bg-dark-900'
+                      }`}
+                    >
+                      {app.name}
+                      {app.featured && (
+                        <i className="absolute -right-1 -top-3 rotate-6 rounded-sm bg-marker px-1.5 font-hand text-lg not-italic text-accent-500">
+                          {t('subscription.connection.recommended')}
+                        </i>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="text-lg">
               {t('subscription.connection.appLine')}{' '}
               <strong className="font-semibold">{selectedApp.name}</strong>
-            </span>
-            {currentPlatformApps.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setAppsOpen((v) => !v)}
-                aria-expanded={appsOpen}
-                className="text-base text-accent-500 underline underline-offset-4"
-              >
-                {t('subscription.connection.otherApp')}
-              </button>
-            )}
-          </div>
-          {appsOpen && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {currentPlatformApps.map((app, idx) => {
-                const isSelected = selectedApp?.name === app.name;
-                return (
-                  <button
-                    key={app.name + idx}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelectedApp(app)}
-                    className={`rounded-full border-[1.5px] px-3.5 py-2 text-base transition-colors ${
-                      isSelected
-                        ? 'border-marker bg-marker font-semibold text-dark-100'
-                        : 'border-dark-100 text-dark-100 hover:bg-dark-900'
-                    }`}
-                  >
-                    {app.name}
-                  </button>
-                );
-              })}
             </div>
           )}
         </div>
