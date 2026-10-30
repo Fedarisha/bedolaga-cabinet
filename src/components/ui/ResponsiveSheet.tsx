@@ -71,11 +71,7 @@ export function ResponsiveSheet({
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-dark-950/70 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
+      <div className="absolute inset-0 bg-dark-950/70" onClick={onClose} aria-hidden />
       <div
         ref={dialogRef}
         role="dialog"

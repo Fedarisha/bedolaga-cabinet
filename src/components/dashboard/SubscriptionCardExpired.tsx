@@ -217,9 +217,7 @@ export default function SubscriptionCardExpired({
 
       {/* Limited description */}
       {isLimited && (
-        <p className="mb-4 text-sm text-dark-50/60">
-          {t('subscription.trafficLimitedDescription')}
-        </p>
+        <p className="mb-4 text-sm text-dark-200">{t('subscription.trafficLimitedDescription')}</p>
       )}
 
       {/* Expired date + Balance row */}
@@ -241,7 +239,7 @@ export default function SubscriptionCardExpired({
                   context: subscription.is_trial ? 'trial' : '',
                 })}
           </div>
-          <div className="text-base font-bold tracking-tight text-dark-50/50">{formattedDate}</div>
+          <div className="text-base font-bold tracking-tight text-dark-200">{formattedDate}</div>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-medium uppercase tracking-wider text-dark-400">
@@ -356,7 +354,7 @@ export default function SubscriptionCardExpired({
               <Link
                 to="/subscription/purchase"
                 className={`flex items-center justify-center rounded-[14px] px-5 py-3.5 text-[15px] font-semibold tracking-tight transition-colors duration-200 ${
-                  subscription.is_trial ? 'flex-1 text-white' : 'text-dark-50/50'
+                  subscription.is_trial ? 'flex-1 text-white' : 'text-dark-200'
                 }`}
                 style={
                   subscription.is_trial

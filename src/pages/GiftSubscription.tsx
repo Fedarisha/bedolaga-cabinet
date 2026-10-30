@@ -992,7 +992,7 @@ function CopiedToast({ onDismiss }: { onDismiss: () => void }) {
       // На мобильном стоит над нижней панелью: на bottom-6 тост целиком уходил за неё.
       className="fixed inset-x-0 bottom-[var(--mobile-nav-clearance)] z-50 flex justify-center lg:bottom-6"
     >
-      <div className="flex items-center gap-2 rounded-full border border-dark-700/50 bg-dark-900/95 px-5 py-2.5 shadow-2xl shadow-black/40 backdrop-blur-md">
+      <div className="flex items-center gap-2 rounded-full border border-dark-700/50 bg-dark-900/95 px-5 py-2.5 shadow-2xl shadow-black/40">
         <CheckIcon className="h-4 w-4 text-success-400" />
         <span className="text-sm font-medium text-success-400">{t('gift.shareToastCopied')}</span>
       </div>

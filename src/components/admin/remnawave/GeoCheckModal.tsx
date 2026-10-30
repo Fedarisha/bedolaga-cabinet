@@ -91,10 +91,7 @@ export function GeoCheckModal({ node, onClose }: GeoCheckModalProps) {
           : 'max(1rem, env(safe-area-inset-right))',
       }}
     >
-      <div
-        className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
-        onClick={handleBackdropClick}
-      />
+      <div className="absolute inset-0 bg-dark-950/80" onClick={handleBackdropClick} />
 
       <div
         ref={dialogRef}

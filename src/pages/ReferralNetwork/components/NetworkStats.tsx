@@ -21,7 +21,7 @@ export function NetworkStats({ data, className }: NetworkStatsProps) {
 
   return (
     <div
-      className={`rounded-xl border border-dark-700/50 bg-dark-900/80 p-2 backdrop-blur-md sm:p-3 ${className ?? ''}`}
+      className={`rounded-xl border border-dark-700/50 bg-dark-900/80 p-2 sm:p-3 ${className ?? ''}`}
     >
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:gap-x-6 sm:gap-y-2">
         <StatCard

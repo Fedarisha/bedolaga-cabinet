@@ -1,4 +1,4 @@
-import { type ReactNode, type Ref } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { motion } from 'framer-motion';
 import { scale, scaleTransition, slideUp, slideUpTransition } from '../motion/transitions';
 import { cn } from '@/lib/utils';
@@ -124,7 +124,7 @@ export default function BlockingShell({
           transition={scaleTransition}
           aria-live={ariaLive === 'polite' ? 'polite' : undefined}
           aria-atomic={ariaLive === 'polite' ? true : undefined}
-          className="relative w-full max-w-md overflow-hidden rounded-[var(--bento-radius)] border border-dark-700/40 bg-dark-900/80 p-8 text-center shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.05)] backdrop-blur-xl sm:p-10"
+          className="relative w-full max-w-md overflow-hidden rounded-[var(--bento-radius)] border border-dark-700/40 bg-dark-900/80 p-8 text-center shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.05)] sm:p-10"
         >
           {/* Top accent hairline */}
           <div

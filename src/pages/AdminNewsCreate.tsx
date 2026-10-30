@@ -700,7 +700,7 @@ export default function AdminNewsCreate() {
           >
             {/* Upload progress overlay */}
             {isUploading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-dark-900/60 backdrop-blur-sm">
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-dark-900/60">
                 <div className="flex flex-col items-center gap-3">
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-400 border-t-transparent" />
                   <span className="text-sm font-medium text-dark-200">

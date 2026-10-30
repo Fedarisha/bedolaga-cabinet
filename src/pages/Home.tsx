@@ -128,7 +128,7 @@ export default function Home() {
   return (
     <div className="min-h-[100dvh] text-dark-100">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b-[1.5px] border-dashed border-dark-700 bg-dark-950/90 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b-[1.5px] border-dashed border-dark-700 bg-dark-950/90">
         <div className="mx-auto flex max-w-6xl items-center gap-3 py-3.5 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
           <Link to="/home" className="flex min-w-0 items-center gap-2.5">
             <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg">

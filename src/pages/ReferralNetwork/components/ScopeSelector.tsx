@@ -295,7 +295,7 @@ export function ScopeSelector({
           and aria-expanded already announce the popup; AT can navigate into
           it directly. The inner div carries role="listbox". */}
       {isDropdownOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-dark-700/50 bg-dark-800 shadow-xl backdrop-blur-md">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-dark-700/50 bg-dark-800 shadow-xl">
           {/* Max reached banner */}
           {isMaxReached && (
             <div className="border-b border-dark-700/50 px-3 py-1.5 text-center text-xs text-warning-400">

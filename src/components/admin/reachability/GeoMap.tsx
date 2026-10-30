@@ -378,7 +378,7 @@ function GeoMapBody({
         event.stopPropagation();
         onPress();
       }}
-      className="flex h-10 w-10 items-center justify-center rounded-lg border border-dark-700/60 bg-dark-900/80 text-dark-100 backdrop-blur disabled:opacity-40"
+      className="flex h-10 w-10 items-center justify-center rounded-lg border border-dark-700/60 bg-dark-900/80 text-dark-100 disabled:opacity-40"
     >
       <Icon className="h-4 w-4" />
     </button>

@@ -240,7 +240,7 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
       {/* Dropdown */}
       {isOpen && (
         <div
-          className="fixed left-4 right-4 z-50 mt-0 w-auto animate-scale-in overflow-hidden rounded-2xl border border-dark-700/50 bg-dark-900/95 shadow-2xl shadow-black/30 backdrop-blur-xl sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96"
+          className="fixed left-4 right-4 z-50 mt-0 w-auto animate-scale-in overflow-hidden rounded-2xl border border-dark-700/50 bg-dark-900/95 shadow-2xl shadow-black/30 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96"
           style={isMobileFullscreen ? { top: dropdownTop } : undefined}
         >
           {/* Header */}

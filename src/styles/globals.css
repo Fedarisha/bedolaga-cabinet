@@ -635,13 +635,6 @@ img.twemoji {
     }
   }
 
-  /* Enable backdrop-blur only on desktop where it's performant */
-  @media (min-width: 1024px) {
-    .glass {
-      @apply bg-dark-900/30 backdrop-blur-xl;
-    }
-  }
-
   /* Buttons - Dark
      min-h-[44px] on mobile (WCAG 2.5.5 AAA touch target floor), keeping
      visual at py-2 / ~36px on desktop where mouse precision rules.
@@ -762,22 +755,6 @@ img.twemoji {
     @apply border-t border-dark-800/50;
   }
 
-  /* ========== MOBILE PERFORMANCE: Disable backdrop-blur ========== */
-  @media (max-width: 1023px) {
-    /* Disable all backdrop-blur on mobile for better scroll performance */
-    .backdrop-blur,
-    .backdrop-blur-sm,
-    .backdrop-blur-md,
-    .backdrop-blur-lg,
-    .backdrop-blur-xl,
-    .backdrop-blur-2xl,
-    .backdrop-blur-3xl,
-    .backdrop-blur-linear {
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-  }
-
   /* ========== LIGHT THEME COMPONENTS (Champagne) ========== */
 
   /* Cards - Light */
@@ -804,12 +781,6 @@ img.twemoji {
   /* Glass effect - Light (optimized for mobile) */
   .light .glass {
     @apply border border-champagne-300/40 bg-champagne-50/90;
-  }
-
-  @media (min-width: 1024px) {
-    .light .glass {
-      @apply bg-champagne-50/60 backdrop-blur-xl;
-    }
   }
 
   /* Ярлык «На экран Домой» в светлой теме — то же, что для тёмной выше: шапка
@@ -1187,12 +1158,6 @@ img.twemoji {
 
   .glow-success {
     box-shadow: 0 0 20px theme("colors.success.500 / 30%");
-  }
-
-  /* Blur backdrop */
-  .blur-backdrop {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
 
   /* Safe area insets for mobile bottom sheets */
@@ -1852,35 +1817,6 @@ input[type="checkbox"]:hover:not(:checked) {
   to {
     opacity: 1;
     transform: translateX(0);
-  }
-}
-
-.admin-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  pointer-events: none;
-  animation: adminOrbFloat 20s ease-in-out infinite alternate;
-}
-
-.light .admin-orb {
-  filter: blur(140px);
-  opacity: 0.15 !important;
-}
-
-/* Mobile: reduce orb count and blur for performance */
-@media (max-width: 1023px) {
-  .admin-orb {
-    filter: blur(80px);
-  }
-  .admin-orb:nth-child(n + 4) {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-orb {
-    animation: none;
   }
 }
 

@@ -93,7 +93,7 @@ function Tooltip({
   return (
     <div
       role="tooltip"
-      className="pointer-events-none absolute z-10 min-w-[180px] rounded-xl border border-dark-700/60 bg-dark-900/95 px-3 py-2.5 text-sm shadow-linear backdrop-blur"
+      className="pointer-events-none absolute z-10 min-w-[180px] rounded-xl border border-dark-700/60 bg-dark-900/95 px-3 py-2.5 text-sm shadow-linear"
       style={{ left, top, maxWidth }}
     >
       <p className="font-semibold text-dark-50">{name}</p>

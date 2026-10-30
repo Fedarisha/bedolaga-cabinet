@@ -175,7 +175,7 @@ export const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuConten
           className={cn(
             'z-50 min-w-[8rem] overflow-hidden',
             // Непрозрачный фон: полупрозрачный пропускал текст страницы сквозь пункты
-            // (backdrop-blur есть не во всех WebView).
+            // ( есть не во всех WebView).
             'rounded-xl border border-dark-700 bg-dark-900',
             'p-1 text-dark-100 shadow-2xl shadow-black/40',
             className,

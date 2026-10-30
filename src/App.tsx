@@ -215,7 +215,7 @@ function PublicPageLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-dark-950 text-dark-50">
-      <header className="sticky top-0 z-50 border-b border-dark-800/50 bg-dark-950/95 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-dark-800/50 bg-dark-950/95">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-3 px-4">
           <button
             type="button"

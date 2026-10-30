@@ -154,8 +154,11 @@ export default {
         'linear-lg': '24px',
         'linear-xl': '32px',
       },
-      backdropBlur: {
-        linear: '12px',
+      // `transition-all` анимирует только то, что браузер выполняет на композиторе
+      // или дёшево перекрашивает. Без box-shadow, filter, размеров и отступов: их
+      // анимация гоняет layout/paint на каждом кадре (старые телефоны).
+      transitionProperty: {
+        all: 'color, background-color, border-color, fill, stroke, opacity, transform',
       },
       fontSize: {
         '2xs': ['0.625rem', { lineHeight: '0.875rem' }],

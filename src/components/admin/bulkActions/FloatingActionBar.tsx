@@ -142,7 +142,7 @@ export function FloatingActionBar({
     >
       <div
         ref={menuRef}
-        className="relative flex w-full max-w-2xl items-center gap-2 rounded-2xl border border-dark-700/60 bg-dark-800/80 px-3 py-3 shadow-2xl backdrop-blur-xl sm:gap-3 sm:px-5"
+        className="relative flex w-full max-w-2xl items-center gap-2 rounded-2xl border border-dark-700/60 bg-dark-800/80 px-3 py-3 shadow-2xl sm:gap-3 sm:px-5"
       >
         <div className="flex shrink-0 items-center gap-2">
           {selectedUserCount > 0 && (

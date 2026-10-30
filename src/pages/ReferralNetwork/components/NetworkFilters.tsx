@@ -131,7 +131,7 @@ export function NetworkFilters({ data, className }: NetworkFiltersProps) {
       {/* Desktop: absolute dropdown below button */}
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-2 hidden sm:block">
-          <div className="w-64 rounded-xl border border-dark-700/50 bg-dark-900/95 p-4 shadow-xl backdrop-blur-md">
+          <div className="w-64 rounded-xl border border-dark-700/50 bg-dark-900/95 p-4 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-dark-100">
                 {t('admin.referralNetwork.filters.title')}
@@ -153,7 +153,7 @@ export function NetworkFilters({ data, className }: NetworkFiltersProps) {
       {isOpen && (
         <div className="fixed inset-x-0 top-0 z-50 sm:hidden">
           <div className="fixed inset-0 bg-dark-950/60" onClick={() => setIsOpen(false)} />
-          <div className="relative mx-3 mt-3 rounded-xl border border-dark-700/50 bg-dark-900/95 p-4 backdrop-blur-md">
+          <div className="relative mx-3 mt-3 rounded-xl border border-dark-700/50 bg-dark-900/95 p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-dark-100">
                 {t('admin.referralNetwork.filters.title')}

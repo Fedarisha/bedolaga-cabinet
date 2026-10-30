@@ -25,7 +25,7 @@ const cardVariants = cva(
       },
       variant: {
         default: '',
-        glass: 'backdrop-blur-linear bg-dark-900/50',
+        glass: ' bg-dark-900/50',
         solid: 'bg-dark-900',
         outline: 'bg-transparent',
       },

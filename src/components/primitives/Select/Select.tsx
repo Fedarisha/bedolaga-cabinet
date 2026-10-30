@@ -56,7 +56,7 @@ export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
         ref={ref}
         className={cn(
           'relative z-50 max-h-80 min-w-[8rem] overflow-hidden',
-          'rounded-linear-lg border border-dark-700/50 bg-dark-900/95 backdrop-blur-linear',
+          'rounded-linear-lg border border-dark-700/50 bg-dark-900/95',
           'text-dark-100 shadow-linear-lg',
           position === 'popper' &&
             'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',

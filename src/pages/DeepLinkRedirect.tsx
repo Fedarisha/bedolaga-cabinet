@@ -188,7 +188,7 @@ export default function DeepLinkRedirect() {
 
         {/* Countdown State */}
         {status === 'countdown' && (
-          <div className="card !bg-dark-800/80 p-6 backdrop-blur-sm">
+          <div className="card !bg-dark-800/80 p-6">
             {/* App icon */}
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/20">
               <span className="text-2xl font-bold text-accent-400">{appIcon}</span>
@@ -229,7 +229,7 @@ export default function DeepLinkRedirect() {
 
         {/* Fallback State - App didn't open */}
         {status === 'fallback' && (
-          <div className="card !bg-dark-800/80 p-6 backdrop-blur-sm">
+          <div className="card !bg-dark-800/80 p-6">
             {/* App icon */}
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/20">
               <span className="text-2xl font-bold text-accent-400">{appIcon}</span>
@@ -289,7 +289,7 @@ export default function DeepLinkRedirect() {
 
         {/* Error State */}
         {status === 'error' && (
-          <div className="card !bg-dark-800/80 p-6 backdrop-blur-sm">
+          <div className="card !bg-dark-800/80 p-6">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-error-500/20">
               <ExclamationIcon className="h-8 w-8 text-error-400" />
             </div>

@@ -189,7 +189,7 @@ export default function Landing() {
   return (
     <div className="fed-landing relative min-h-[100dvh] bg-dark-950 text-dark-100" lang={lang}>
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-dark-800/60 bg-dark-950/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-dark-800/60 bg-dark-950/85">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link to="/home" className="flex shrink-0 items-center gap-2.5">
             <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-dark-700/60 bg-dark-800/80">

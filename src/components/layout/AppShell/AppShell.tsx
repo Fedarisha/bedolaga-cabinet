@@ -177,7 +177,7 @@ export function AppShell({ children }: AppShellProps) {
           скроллбара, и капсула по центру прыгала бы на полширины скроллбара при
           переходах между страницами со скроллом и без. 100vw даёт ту же ось
           центрирования, что и у body (тоже 100vw). */}
-      <header className="fixed left-0 top-0 z-50 hidden w-screen border-b-[1.5px] border-dashed border-dark-700 bg-dark-950/95 backdrop-blur lg:block">
+      <header className="fixed left-0 top-0 z-50 hidden w-screen border-b-[1.5px] border-dashed border-dark-700 bg-dark-950/95 lg:block">
         {/* 3-зонный grid: лого | капсула | действия. Колонки 1fr_auto_1fr держат
             капсулу строго по центру вьюпорта НЕЗАВИСИМО от ширины лого/действий,
             а действия — у правого края. Поэтому ничего не «скачет» при переходах
@@ -217,7 +217,7 @@ export function AppShell({ children }: AppShellProps) {
           {/* Navigation — единая «капсула» (segmented control): все пункты видны
               всегда, без скролла/сжатия/сворачивания. Центрируется средней
               колонкой grid (justify-self-center), а не auto-margin'ами. */}
-          <nav className="flex items-center gap-0.5 justify-self-center rounded-full border border-dark-800/70 bg-dark-900/50 p-1 shadow-sm backdrop-blur-sm">
+          <nav className="flex items-center gap-0.5 justify-self-center rounded-full border border-dark-800/70 bg-dark-900/50 p-1 shadow-sm">
             {desktopNav.map((item) => renderNavLink(item.path, item.label, item.icon))}
             {isAdmin && (
               <>

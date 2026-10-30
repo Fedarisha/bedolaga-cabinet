@@ -339,7 +339,7 @@ export function Sheet({
     >
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-dark-950/60 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-dark-950/60 transition-opacity duration-300 ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       />

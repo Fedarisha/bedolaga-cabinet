@@ -379,7 +379,7 @@ export default function AdminBanSystem() {
       <div className="flex min-h-[60vh] animate-fade-in items-center justify-center">
         <div className="mx-4 w-full max-w-md">
           {/* Card */}
-          <div className="rounded-2xl border border-dark-700 bg-dark-800/50 p-8 text-center shadow-2xl backdrop-blur-xl">
+          <div className="rounded-2xl border border-dark-700 bg-dark-800/50 p-8 text-center shadow-2xl">
             {/* Icon */}
             <div className="mb-6 flex justify-center">
               <div className="relative">

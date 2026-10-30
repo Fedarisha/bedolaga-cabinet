@@ -566,7 +566,7 @@ const GlassCard = memo(function GlassCard({ section, index, searchTerm }: GlassC
   if (visibleItems.length === 0) return null;
 
   return (
-    <div className="group/card relative overflow-hidden rounded-2xl border border-dark-700/50 bg-dark-800/30 backdrop-blur-xl transition-colors duration-200 hover:border-dark-600/80 light:border-champagne-300/50 light:bg-champagne-100/40 light:hover:border-champagne-400/60">
+    <div className="group/card relative overflow-hidden rounded-2xl border border-dark-700/50 bg-dark-800/30 transition-colors duration-200 hover:border-dark-600/80 light:border-champagne-300/50 light:bg-champagne-100/40 light:hover:border-champagne-400/60">
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-dark-700/30 px-3.5 py-2.5 light:border-champagne-300/30">
         <div
@@ -775,7 +775,7 @@ export default function AdminPanel() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('admin.panel.searchPlaceholder')}
               aria-label={t('admin.panel.searchPlaceholder')}
-              className="w-full rounded-xl border border-dark-700/50 bg-dark-800/40 py-2 pl-8 pr-16 font-sans text-xs text-dark-100 outline-none backdrop-blur-lg transition-all placeholder:text-dark-500 focus:border-accent-500/40 focus:shadow-[0_0_0_3px_rgba(var(--color-accent-500),0.08)] light:border-champagne-300/50 light:bg-champagne-100/60 light:text-champagne-900 light:placeholder:text-champagne-500 light:focus:border-accent-500/40"
+              className="w-full rounded-xl border border-dark-700/50 bg-dark-800/40 py-2 pl-8 pr-16 font-sans text-xs text-dark-100 outline-none transition-all placeholder:text-dark-500 focus:border-accent-500/40 focus:shadow-[0_0_0_3px_rgba(var(--color-accent-500),0.08)] light:border-champagne-300/50 light:bg-champagne-100/60 light:text-champagne-900 light:placeholder:text-champagne-500 light:focus:border-accent-500/40"
             />
             {search && (
               <button

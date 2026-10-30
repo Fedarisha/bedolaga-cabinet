@@ -63,7 +63,7 @@ export function AutopayToggle({
     >
       <div>
         <div className="text-sm font-semibold text-dark-50">{t('subscription.autoRenewal')}</div>
-        <div className="mt-0.5 text-[11px] text-dark-400">
+        <div className="mt-0.5 text-xs text-dark-300">
           {t('subscription.daysBeforeExpiry', { count: subscription.autopay_days_before })}
         </div>
       </div>

@@ -111,7 +111,7 @@ export function DevicesPanel({ subscription, subscriptionId }: DevicesPanelProps
         </SkeletonGroup>
       ) : devicesData && devicesData.devices.length > 0 ? (
         <div className="space-y-2">
-          <div className="mb-2 font-mono text-[11px] text-dark-400">
+          <div className="mb-2 font-mono text-xs text-dark-300">
             {devicesData.device_limit === 0
               ? `${devicesData.total} · ∞`
               : `${devicesData.total} / ${t('subscription.devices', { count: devicesData.device_limit })}`}
@@ -171,7 +171,7 @@ export function DevicesPanel({ subscription, subscriptionId }: DevicesPanelProps
                         {displayName}
                       </div>
                     )}
-                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-dark-400">
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-dark-300">
                       <span className="truncate">{device.platform}</span>
                       <span className="font-mono text-dark-400">
                         {device.hwid.slice(0, 8).toUpperCase()}
@@ -255,9 +255,7 @@ export function DevicesPanel({ subscription, subscriptionId }: DevicesPanelProps
           })}
         </div>
       ) : (
-        <div className="py-8 text-center text-[12px] text-dark-400">
-          {t('subscription.noDevices')}
-        </div>
+        <div className="py-8 text-center text-xs text-dark-300">{t('subscription.noDevices')}</div>
       )}
     </>
   );

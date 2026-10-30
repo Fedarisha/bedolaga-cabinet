@@ -55,7 +55,7 @@ export function DailyPausePanel({ subscription, subscriptionId }: DailyPausePane
           <h2 className="text-base font-bold tracking-tight text-dark-50">
             {t('subscription.pause.title')}
           </h2>
-          <div className="mt-1 text-[12px] text-dark-400">
+          <div className="mt-1 text-xs text-dark-300">
             {subscription.is_limited
               ? t('subscription.trafficLimited')
               : subscription.status === 'disabled'
@@ -147,7 +147,7 @@ export function DailyPausePanel({ subscription, subscriptionId }: DailyPausePane
               >
                 {t('subscription.pause.pausedInfo')}
               </div>
-              <div className="mt-1 text-[12px] text-dark-400">
+              <div className="mt-1 text-xs text-dark-300">
                 {t('subscription.pause.pausedDescription')}{' '}
                 {new Date(subscription.end_date).toLocaleDateString(uiLocale())} (
                 {t('subscription.pause.days', { count: subscription.days_left })})
@@ -197,7 +197,7 @@ export function DailyPausePanel({ subscription, subscriptionId }: DailyPausePane
                 />
               </div>
               {subscription.daily_price_kopeks && (
-                <div className="mt-2 text-center text-[11px] text-dark-400">
+                <div className="mt-2 text-center text-xs text-dark-300">
                   {t('subscription.pause.willBeCharged')}:{' '}
                   {formatPrice(subscription.daily_price_kopeks)}
                 </div>

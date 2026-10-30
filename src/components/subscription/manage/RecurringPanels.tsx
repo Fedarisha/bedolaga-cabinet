@@ -316,25 +316,25 @@ export function RecurringPanels({ subscription, subscriptionId }: RecurringPanel
               </div>
 
               {sbpUiStateValue === 'off' && (
-                <div className="mt-0.5 text-[11px] text-dark-400">
+                <div className="mt-0.5 text-xs text-dark-300">
                   {t('subscription.sbpRecurring.autopayHint')}
                 </div>
               )}
               {sbpUiStateValue === 'pending' && (
-                <div className="mt-0.5 text-[11px] text-dark-400">
+                <div className="mt-0.5 text-xs text-dark-300">
                   {t('subscription.sbpRecurring.statusPending')}
                 </div>
               )}
               {sbpUiStateValue === 'active' && sbpInfo && (
                 <>
-                  <div className="mt-0.5 text-[11px] text-dark-400">
+                  <div className="mt-0.5 text-xs text-dark-300">
                     {t('subscription.sbpRecurring.amountPerInterval', {
                       amount: formatAmount((sbpInfo.amount_kopeks ?? 0) / 100),
                       interval: t(sbpIntervalLabelKey(sbpInfo.interval)),
                     })}
                   </div>
                   {sbpInfo.next_charge_at && (
-                    <div className="mt-0.5 text-[11px] text-dark-400">
+                    <div className="mt-0.5 text-xs text-dark-300">
                       {t('subscription.sbpRecurring.nextCharge', {
                         date: new Date(sbpInfo.next_charge_at).toLocaleDateString(uiLocale(), {
                           day: '2-digit',
@@ -426,18 +426,18 @@ export function RecurringPanels({ subscription, subscriptionId }: RecurringPanel
               </div>
 
               {lavaUiStateValue === 'off' && (
-                <div className="mt-0.5 text-[11px] text-dark-400">
+                <div className="mt-0.5 text-xs text-dark-300">
                   {t('subscription.lavaRecurring.autopayHint')}
                 </div>
               )}
               {lavaUiStateValue === 'pending' && (
-                <div className="mt-0.5 text-[11px] text-dark-400">
+                <div className="mt-0.5 text-xs text-dark-300">
                   {t('subscription.lavaRecurring.statusPending')}
                 </div>
               )}
               {lavaUiStateValue === 'active' && lavaInfo && (
                 <>
-                  <div className="mt-0.5 text-[11px] text-dark-400">
+                  <div className="mt-0.5 text-xs text-dark-300">
                     {(() => {
                       const periodKey = lavaPeriodLabelKey(lavaInfo.charge_days);
                       const amount = formatAmount((lavaInfo.amount_kopeks ?? 0) / 100);
@@ -453,7 +453,7 @@ export function RecurringPanels({ subscription, subscriptionId }: RecurringPanel
                     })()}
                   </div>
                   {lavaInfo.next_charge_at && (
-                    <div className="mt-0.5 text-[11px] text-dark-400">
+                    <div className="mt-0.5 text-xs text-dark-300">
                       {t('subscription.lavaRecurring.nextCharge', {
                         date: new Date(lavaInfo.next_charge_at).toLocaleDateString(uiLocale(), {
                           day: '2-digit',
@@ -543,25 +543,25 @@ export function RecurringPanels({ subscription, subscriptionId }: RecurringPanel
               </div>
 
               {casheraUiStateValue === 'off' && (
-                <div className="mt-0.5 text-[11px] text-dark-400">
+                <div className="mt-0.5 text-xs text-dark-300">
                   {t('subscription.casheraRecurring.autopayHint')}
                 </div>
               )}
               {casheraUiStateValue === 'pending' && (
-                <div className="mt-0.5 text-[11px] text-dark-400">
+                <div className="mt-0.5 text-xs text-dark-300">
                   {t('subscription.casheraRecurring.statusPending')}
                 </div>
               )}
               {casheraUiStateValue === 'active' && casheraInfo && (
                 <>
-                  <div className="mt-0.5 text-[11px] text-dark-400">
+                  <div className="mt-0.5 text-xs text-dark-300">
                     {t('subscription.casheraRecurring.amountPerInterval', {
                       amount: formatAmount((casheraInfo.amount_kopeks ?? 0) / 100),
                       interval: t(casheraIntervalLabelKey(casheraInfo.interval)),
                     })}
                   </div>
                   {casheraInfo.next_charge_at && (
-                    <div className="mt-0.5 text-[11px] text-dark-400">
+                    <div className="mt-0.5 text-xs text-dark-300">
                       {t('subscription.casheraRecurring.nextCharge', {
                         date: new Date(casheraInfo.next_charge_at).toLocaleDateString(uiLocale(), {
                           day: '2-digit',

@@ -42,7 +42,7 @@ export const DialogOverlay = forwardRef<HTMLDivElement, DialogOverlayProps>(
   ({ className, ...props }, ref) => (
     <DialogPrimitive.Overlay
       ref={ref}
-      className={cn('fixed inset-0 z-50 bg-dark-950/60 backdrop-blur-sm', className)}
+      className={cn('fixed inset-0 z-50 bg-dark-950/60', className)}
       asChild
       {...props}
     >
@@ -82,7 +82,7 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(
                     'pointer-events-auto relative',
                     'max-h-[85vh] w-full max-w-lg',
                     'grid gap-4 overflow-auto',
-                    'rounded-linear-lg border border-dark-700/50 bg-dark-900/95 backdrop-blur-linear',
+                    'rounded-linear-lg border border-dark-700/50 bg-dark-900/95',
                     'p-6 shadow-linear-lg',
                     'focus:outline-none',
                     className,

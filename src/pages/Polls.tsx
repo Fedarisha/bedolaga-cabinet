@@ -117,7 +117,7 @@ export default function Polls() {
           {/* Окно поверх списка — сплошное, подложка размыта: сквозь
               полупрозрачную карточку текст страницы ложился на текст вопроса. */}
           <div
-            className="absolute inset-0 bg-dark-950/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-dark-950/70"
             onClick={handleClosePoll}
             aria-hidden="true"
           />
