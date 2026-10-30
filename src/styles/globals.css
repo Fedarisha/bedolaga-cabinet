@@ -1886,28 +1886,11 @@ input[type="checkbox"]:hover:not(:checked) {
   .napkin > * {
     position: relative;
   }
-  /* Наклоняется только бумага: текст внутри не поворачиваем, иначе он рисуется
-     через повёрнутый слой и расплывается. */
+  /* Один поворот на весь блок, текст наклонён вместе с бумагой. Не добавлять сюда
+     will-change/translateZ/backface-visibility: вынесенный в слой повёрнутый текст
+     теряет субпиксельное сглаживание и мылится. Обратный поворот детей тоже не
+     нужен: он давал два повёрнутых слоя. */
   .napkin-tilt {
-    isolation: isolate;
-    background: transparent;
-    box-shadow: none;
-  }
-  .napkin-tilt::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: 6px;
-    pointer-events: none;
-    background: rgb(var(--color-dark-800));
-    box-shadow:
-      0 1px 0 rgb(var(--color-dark-700)),
-      0 20px 34px -22px rgba(var(--color-accent-500), 0.3),
-      0 2px 8px rgba(35, 37, 43, 0.06);
-    transform: rotate(-0.8deg);
-  }
-  .napkin-tilt::before {
     transform: rotate(-0.8deg);
   }
 
