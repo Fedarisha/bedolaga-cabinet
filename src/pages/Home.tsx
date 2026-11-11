@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useBranding } from '../hooks/useBranding';
 import { landingApi } from '../api/landings';
 import type { LandingTariff } from '../api/landings';
-import { infoApi } from '../api/info';
 import { formatPrice } from '../utils/format';
 import { cn } from '../lib/utils';
 
@@ -14,7 +13,7 @@ import { cn } from '../lib/utils';
  * работает VPN, тарифы — меню с точками до цены. Тексты короткие и по делу.
  */
 
-const FAQ = ['ruSites', 'devices', 'deviceCount', 'speed', 'history', 'help'] as const;
+const FAQ = ['ruSites', 'devices', 'deviceCount', 'speed', 'history'] as const;
 const STEPS = ['login', 'pay', 'connect'] as const;
 const CIRCLE_TILT = [-8, 6, -3];
 
@@ -93,12 +92,6 @@ export default function Home() {
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
-  const { data: support } = useQuery({
-    queryKey: ['support-config'],
-    queryFn: infoApi.getSupportConfig,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
 
   const tariffs: LandingTariff[] = landingData?.tariffs ?? [];
   const periodTariffs = tariffs.filter((tariff) => !tariff.is_daily && tariff.periods.length);
@@ -118,12 +111,6 @@ export default function Home() {
     days % 30 === 0
       ? t('home.napkin.months', { count: days / 30 })
       : t('home.napkin.days', { count: days });
-
-  const supportTg = support?.support_tg_username?.trim();
-  const supportTgUrl =
-    support?.support_url?.trim() ||
-    (supportTg ? `https://telegram.me/${supportTg.replace(/^@/, '')}` : '');
-  const supportVk = support?.support_vk_url?.trim();
 
   return (
     <div className="min-h-[100dvh] text-dark-100">
@@ -165,9 +152,6 @@ export default function Home() {
             </a>
             <a href="#start" className="hover:text-accent-500">
               {t('home.napkin.navStart')}
-            </a>
-            <a href="#help" className="hover:text-accent-500">
-              {t('home.napkin.navHelp')}
             </a>
           </nav>
           <CabinetLink
@@ -535,67 +519,12 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        {/* Поддержка */}
-        {(supportTgUrl || supportVk) && (
-          <section id="help" className="scroll-mt-20 pb-14 md:pb-28" aria-labelledby="help-title">
-            <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-16">
-              <h2
-                id="help-title"
-                className="font-display text-[clamp(28px,9vw,78px)] font-extrabold leading-[1.02] md:text-[clamp(36px,6.4vw,78px)]"
-              >
-                <span className="hl">{t('nav.support')}</span>
-              </h2>
-              <div className="grid grid-cols-[minmax(0,1fr)] gap-3.5">
-                {supportTgUrl && (
-                  <a
-                    href={supportTgUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-w-0 items-center justify-between gap-4 rounded-[16px_12px_18px_14px] border-2 border-dark-100 px-5 py-4 transition-[transform,box-shadow] hover:translate-x-1.5 hover:shadow-[-6px_0_0_rgb(var(--napkin-marker))]"
-                  >
-                    <span className="min-w-0">
-                      <small className="block text-sm text-dark-400">Telegram</small>
-                      <strong className="block truncate text-lg font-semibold sm:text-xl">
-                        {supportTg || 'Telegram'}
-                      </strong>
-                    </span>
-                    <span className="font-hand text-3xl text-accent-500" aria-hidden="true">
-                      →
-                    </span>
-                  </a>
-                )}
-                {supportVk && (
-                  <a
-                    href={supportVk}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-w-0 items-center justify-between gap-4 rounded-[16px_12px_18px_14px] border-2 border-dark-100 px-5 py-4 transition-[transform,box-shadow] hover:translate-x-1.5 hover:shadow-[-6px_0_0_rgb(var(--napkin-marker))]"
-                  >
-                    <span className="min-w-0">
-                      <small className="block text-sm text-dark-400">{t('home.napkin.vk')}</small>
-                      <strong className="block truncate text-lg font-semibold sm:text-xl">
-                        {supportVk.replace(/^https?:\/\//, '')}
-                      </strong>
-                    </span>
-                    <span className="font-hand text-3xl text-accent-500" aria-hidden="true">
-                      →
-                    </span>
-                  </a>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
       </main>
 
       <footer className="border-t-[1.5px] border-dashed border-dark-700">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-x-7 gap-y-3.5 pb-10 pt-7 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] text-[15px] text-dark-400">
           {import.meta.env.VITE_LEGAL_INFO && <span>{import.meta.env.VITE_LEGAL_INFO}</span>}
           <nav className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link to="/support" className="hover:text-accent-500">
-              {t('nav.support')}
-            </Link>
             <Link to="/info?tab=rules" className="hover:text-accent-500">
               {t('info.rules')}
             </Link>
