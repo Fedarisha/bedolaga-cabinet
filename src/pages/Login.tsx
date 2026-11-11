@@ -314,11 +314,16 @@ export default function Login() {
         setRegisteredEmail(result.email);
       }
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number; data?: { detail?: string } } };
+      const error = err as { response?: { status?: number; data?: { detail?: unknown } } };
       const status = error.response?.status;
-      const detail = error.response?.data?.detail;
+      const rawDetail = error.response?.data?.detail;
+      // Структурный отказ ({code, message}) — например, «регистрация только по
+      // приглашению». На объекте .includes() падает и форма молчит.
+      const detail = typeof rawDetail === 'string' ? rawDetail : undefined;
 
-      if (status === 400 && detail?.includes('already registered')) {
+      if (rawDetail && typeof rawDetail === 'object' && !Array.isArray(rawDetail)) {
+        setError(getApiErrorMessage(err, t('common.error')));
+      } else if (status === 400 && detail?.includes('already registered')) {
         setError(t('auth.emailAlreadyRegistered', 'This email is already registered'));
       } else if (status === 401 || status === 403) {
         if (detail?.includes('verify your email')) {
